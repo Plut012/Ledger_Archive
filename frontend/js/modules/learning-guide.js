@@ -110,50 +110,75 @@ const LearningGuide = {
                     text: "If anyone tries to alter the past... the hash changes. The chain breaks.",
                     speed: 30,
                     pause: 1500
-                },
-                {
-                    speaker: "AXIOM",
-                    text: "Let me show you.",
-                    speed: 30,
-                    pause: 1000
                 }
             ],
 
             tamperDemo: [
                 {
-                    instruction: "Select any block except genesis",
-                    validate: () => window.selectedBlockIndex > 0,
-                    onComplete: "Good. Now..."
-                },
-                {
                     speaker: "AXIOM",
-                    text: "See that button? Tamper with the block data.",
+                    text: "Let me show you.",
                     speed: 30,
                     pause: 1500
                 },
                 {
-                    instruction: "Click 'Tamper with Block Data' and modify the timestamp",
-                    action: "tamper-block",
-                    validate: () => window.blockTampered === true,
-                    onComplete: "Watch closely..."
+                    action: "axiom-select-block",
+                    blockIndex: 1
                 },
                 {
                     speaker: "AXIOM",
-                    text: "There. The fingerprint changed. The hash is different now.",
+                    text: "Block #1. Sealed and recorded.",
                     speed: 30,
                     pause: 1500
                 },
                 {
                     speaker: "AXIOM",
-                    text: "Look at the chain. The link is broken. The deception is immediately visible.",
+                    text: "Watch the hash field. This is its fingerprint.",
                     speed: 30,
                     pause: 2000
                 },
                 {
                     speaker: "AXIOM",
-                    text: "This is immutability, Captain. The archive cannot be rewritten without detection.",
+                    text: "Now I'm going to alter the timestamp.",
                     speed: 30,
                     pause: 1500
+                },
+                {
+                    action: "axiom-tamper-block",
+                    pause: 500
+                },
+                {
+                    speaker: "AXIOM",
+                    text: "Look. The fingerprint changed instantly.",
+                    speed: 30,
+                    pause: 2000
+                },
+                {
+                    speaker: "AXIOM",
+                    text: "The previous block's hash remains the same. But this block's hash is now different.",
+                    speed: 30,
+                    pause: 2000
+                },
+                {
+                    speaker: "AXIOM",
+                    text: "The chain is broken. The deception is immediately visible.",
+                    speed: 30,
+                    pause: 2000
+                },
+                {
+                    action: "axiom-restore-block",
+                    pause: 500
+                },
+                {
+                    speaker: "AXIOM",
+                    text: "Even when restored to the original... the system remembers.",
+                    speed: 30,
+                    pause: 1500
+                },
+                {
+                    speaker: "AXIOM",
+                    text: "This is immutability, Captain. The archive cannot be rewritten without detection.",
+                    speed: 30,
+                    pause: 2000
                 }
             ],
 
@@ -692,6 +717,7 @@ const LearningGuide = {
 
     startProtocol() {
         this.tutorialActive = true;
+        window.tutorialActive = true;  // Set global flag for UI components
         this.currentAct = 1;
         this.currentLine = 0;
         this.loadProgress();
@@ -741,6 +767,7 @@ const LearningGuide = {
             overlay.style.display = 'none';
         }
         this.tutorialActive = false;
+        window.tutorialActive = false;  // Clear global flag
     },
 
     async playAct(actNumber) {
@@ -787,21 +814,29 @@ const LearningGuide = {
 
         // Handle interactions
         if (act.interactions && act.interactions.length > 0) {
+            window.App.log('');
             await this.handleInteractions(act.interactions);
         }
 
         // Show teaching points
         if (act.teachingPoints && act.teachingPoints.length > 0) {
+            window.App.log('');
             await this.playDialogue(act.teachingPoints);
         }
 
         // Handle tamper demo (Act 1 specific)
         if (act.tamperDemo && act.tamperDemo.length > 0) {
+            window.App.log('');
+            window.App.log('---');
+            window.App.log('');
             await this.handleInteractions(act.tamperDemo);
         }
 
         // Show completion
         if (act.completion) {
+            window.App.log('');
+            window.App.log('---');
+            window.App.log('');
             await this.displayLine(act.completion);
             await this.wait(2000);
         }
@@ -841,6 +876,11 @@ const LearningGuide = {
             window.App.log('');  // Blank line between grouped messages
         }
 
+        // Add section break for SYSTEM messages (scene transitions)
+        if (line.speaker === 'SYSTEM') {
+            window.App.log('---');
+        }
+
         // Use App's typewriter logging
         const color = line.speaker === 'AXIOM' ? 'var(--color-primary)' :
                      line.speaker === 'SYSTEM' ? 'var(--color-accent)' : null;
@@ -863,6 +903,45 @@ const LearningGuide = {
     },
 
     async waitForAction(interaction) {
+        // Handle AXIOM programmatic actions
+        if (interaction.action === 'axiom-select-block') {
+            await this.wait(500);
+            if (window.ChainViewer && window.ChainViewer.blocks && window.ChainViewer.blocks.length > interaction.blockIndex) {
+                window.ChainViewer.selectBlock(interaction.blockIndex);
+                AudioSystem.sounds.click();
+            } else {
+                console.error('ChainViewer not ready or insufficient blocks for axiom-select-block');
+            }
+            await this.wait(interaction.pause || 500);
+            return;
+        }
+
+        if (interaction.action === 'axiom-tamper-block') {
+            await this.wait(500);
+            if (window.ChainViewer && window.ChainViewer.selectedBlock !== null) {
+                const block = window.ChainViewer.blocks[window.ChainViewer.selectedBlock];
+                window.ChainViewer.tamperWithBlock(block);
+                // Modify the timestamp programmatically
+                if (window.ChainViewer.tamperedBlock) {
+                    window.ChainViewer.tamperedBlock.timestamp = '2347-156-12:34:56.789';
+                    window.ChainViewer.renderBlockDetails(block);
+                }
+                AudioSystem.sounds.error();
+            }
+            await this.wait(interaction.pause || 500);
+            return;
+        }
+
+        if (interaction.action === 'axiom-restore-block') {
+            await this.wait(500);
+            if (window.ChainViewer) {
+                window.ChainViewer.restoreBlock();
+                AudioSystem.sounds.success();
+            }
+            await this.wait(interaction.pause || 500);
+            return;
+        }
+
         // Show instruction in terminal if present
         if (interaction.instruction) {
             window.App.logHighlight(`→ ${interaction.instruction}`);
@@ -979,6 +1058,7 @@ const LearningGuide = {
         this.playerProgress.completedDate = new Date().toISOString();
         this.saveProgress();
         this.tutorialActive = false;
+        window.tutorialActive = false;  // Clear global flag
 
         window.App.log('');
         window.App.logAccent('>>> ARCHIVE CAPTAIN CERTIFICATION GRANTED <<<');

@@ -274,13 +274,15 @@
 
 **If continuing development:**
 
-**Phase 5 ideas (not required):**
+**Act 5 fork split mechanic:**
+- Requires design discussion for simplicity/robustness (see docs/act5_fork_extension.md)
+- Would add interactive consensus demonstration
+
+**Other ideas:**
 - Protocol Engine (smart contracts)
 - Economic Simulator (DeFi)
-- Additional tutorial content
 - More visual effects
-- Sound effects
-- Multiple difficulty levels
+- Sound effects refinement
 
 **Code improvements:**
 - More comprehensive tests
@@ -299,20 +301,19 @@
 ## Notes for Future Maintainers
 
 **Important gotchas:**
-- [ ] Tutorial engine specifics
-- [ ] Module integration patterns
-- [ ] LocalStorage structure
-- [ ] Validation timing issues
+- Tutorial requires `window.tutorialActive` flag for UI components (set in learning-guide.js)
+- ChainViewer exposed globally in main.js for programmatic control
+- AXIOM actions (`axiom-select-block`, `axiom-tamper-block`, `axiom-restore-block`) handled in waitForAction()
 
 **Helpful tips:**
-- [ ] Best practices discovered
-- [ ] Patterns that worked well
-- [ ] Things to avoid
+- Demonstrative approach (AXIOM shows) > Interactive (player clicks) for better immersion
+- Remove emojis to maintain professional terminal aesthetic
+- Keep dialogue concise, avoid hand-holding instructions
 
 **Extension points:**
-- [ ] How to add new acts
-- [ ] How to modify dialogue
-- [ ] How to add new effects
+- Add new AXIOM actions in `waitForAction()` method
+- Add new act structures in `acts` object
+- Expose other modules globally if needed for programmatic control
 
 ---
 

@@ -108,6 +108,11 @@ const App = {
         this.currentModuleName = moduleName;
         if (this.currentModule) {
             this.currentModule.init(container);
+
+            // Expose ChainViewer globally for tutorial access
+            if (moduleName === 'chain-viewer') {
+                window.ChainViewer = this.currentModule;
+            }
         }
     },
 

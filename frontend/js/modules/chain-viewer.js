@@ -39,7 +39,7 @@ const ChainViewer = {
                     <input type="text" id="miner-address" placeholder="Enter address or leave empty for DEFAULT_MINER" style="width: 100%; padding: 8px; background: rgba(0,255,100,0.05); border: 1px solid var(--color-dim); color: var(--color-text); font-family: 'Courier New', monospace;">
                 </div>
                 <div class="action-buttons">
-                    <button id="btn-mine">⛏️ Mine New Block</button>
+                    <button id="btn-mine">Mine New Block</button>
                     <button id="btn-validate">Validate Chain</button>
                     <button id="btn-refresh">Refresh</button>
                 </div>
@@ -139,7 +139,7 @@ const ChainViewer = {
         const txListHtml = displayBlock.transactions.length > 0
             ? displayBlock.transactions.map((tx, i) => {
                 const isCoinbase = tx.is_coinbase || tx.sender === 'COINBASE';
-                const icon = isCoinbase ? '⛏️' : '→';
+                const icon = isCoinbase ? '*' : '→';
                 const style = isCoinbase ? 'color: var(--color-primary); font-weight: bold;' : '';
                 const label = isCoinbase ? 'COINBASE' : 'TX';
 
@@ -153,7 +153,7 @@ const ChainViewer = {
 
         // Show tamper button if tutorial is active and block is selected
         const tamperButton = (window.tutorialActive && !isTampered && block.index > 0)
-            ? `<button id="btn-tamper-block" style="margin-top: var(--spacing-unit);">🔓 Tamper with Block Data</button>`
+            ? `<button id="btn-tamper-block" style="margin-top: var(--spacing-unit);">Tamper with Block</button>`
             : '';
 
         const restoreButton = isTampered
@@ -299,7 +299,7 @@ const ChainViewer = {
                 App.log(`✓ Block #${data.block.index} mined successfully!`);
 
                 if (data.coinbase) {
-                    App.log(`⛏️ Mining reward: ${data.coinbase.reward} CREDITS → ${Terminal.truncateHash(data.coinbase.recipient, 16)}`);
+                    App.log(`* Mining reward: ${data.coinbase.reward} CREDITS → ${Terminal.truncateHash(data.coinbase.recipient, 16)}`);
                 }
 
                 // Update global state for tutorial validation

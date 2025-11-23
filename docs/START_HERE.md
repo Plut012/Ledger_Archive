@@ -58,8 +58,15 @@ Phase 5: ✅ Complete - Balance Tracking & Economic Incentives
 ✅ Insufficient funds prevention
 ✅ Economic concepts in tutorial
 
+### Recent Improvements
+
+✅ Act 1 tamper demo: AXIOM demonstrates (no player interaction required)
+✅ Emoji removal for cleaner aesthetic
+✅ Tutorial flag system for UI components
+
 ### Optional Future Enhancements
 
+💡 Act 5 fork split mechanic (design discussion required - see act5_fork_extension.md)
 💡 Protocol Engine (smart contracts)
 💡 Economic Simulator (DeFi primitives)
 💡 Advanced consensus mechanisms
