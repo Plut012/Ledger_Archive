@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interstellar Archive Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/terminal.css">
+    <link rel="stylesheet" href="css/modules.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/tutorial.css">
+    <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+    <!-- Incoming Transmission Modal -->
+    <div id="transmission-modal" class="modal">
+        <div class="modal-content">
+            <div class="transmission-header">
+                <span class="transmission-indicator">◉ INCOMING TRANSMISSION</span>
+            </div>
+            <div class="transmission-body">
+                <div class="transmission-from">ORIGIN: IMPERIUM HIGH COMMAND</div>
+                <div class="transmission-separator">─────────────────────────────────</div>
+                <div class="transmission-text">
+                    <p>Archive Station Alpha...</p>
+                    <p>We detected anomalous neural activity from your sector.</p>
+                    <p>Captain's vital signs dropped to critical levels 17 cycles ago.</p>
+                    <p>Emergency protocols were enacted. Your consciousness was preserved.</p>
+                    <p class="transmission-highlight">Do you require REBIRTH PROTOCOL?</p>
+                    <p class="transmission-subtext">[Memory restoration and duty reorientation]</p>
+                </div>
+                <div class="transmission-separator">─────────────────────────────────</div>
+                <div class="transmission-actions">
+                    <button id="btn-rebirth-yes" class="transmission-btn">INITIATE REBIRTH</button>
+                    <button id="btn-rebirth-no" class="transmission-btn secondary">DECLINE - RESUME DUTIES</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="terminal-container">
+        <!-- Header -->
+        <div id="terminal-header">
+            <span>◉ ARCHIVE STATION ALPHA :: INTERSTELLAR LEDGER TERMINAL v0.1.0</span>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="terminal-content">
+            <!-- Navigation Panel -->
+            <aside id="navigation-panel">
+                <div class="nav-section">
+                    <div class="nav-item active" data-module="station-shell">
+                        <span>></span> Station Shell
+                    </div>
+                    <div class="nav-item" data-module="home">
+                        <span> </span> Home
+                    </div>
+                    <div class="nav-item" data-module="chain-viewer">
+                        <span> </span> Chain Viewer
+                    </div>
+                    <div class="nav-item" data-module="network-monitor">
+                        <span> </span> Network Monitor
+                    </div>
+                    <div class="nav-item" data-module="crypto-vault">
+                        <span> </span> Crypto Vault
+                    </div>
+                </div>
+
+                <div class="nav-section" style="margin-top: calc(var(--spacing-unit) * 2); border-top: 1px solid var(--color-dim); padding-top: var(--spacing-unit);">
+                    <div class="nav-section-title" style="color: var(--color-dim); font-size: 14px; margin-bottom: calc(var(--spacing-unit) / 2);">
+                        [EXPERIMENTAL]
+                    </div>
+                    <div class="nav-item" data-module="protocol-engine">
+                        <span> </span> Protocol Engine
+                    </div>
+                    <div class="nav-item" data-module="econ-simulator">
+                        <span> </span> Econ Simulator
+                    </div>
+                </div>
+
+                <div class="system-status">
+                    <div class="status-title">[SYSTEM STATUS]</div>
+                    <div class="status-line">Network: <span id="network-status">◉ SYNCED</span></div>
+                    <div class="status-line">Height: <span id="chain-height">#0</span></div>
+                    <div class="status-line">Pending: <span id="pending-tx">0</span></div>
+                </div>
+            </aside>
+
+            <!-- Main Viewport -->
+            <main id="viewport">
+                <div id="module-container">
+                    <!-- Module content loaded here -->
+                </div>
+            </main>
+
+            <!-- Terminal (moved to right side) -->
+            <aside id="terminal-panel">
+                <div class="terminal-header-label">[IMPERIUM TERMINAL]</div>
+                <div id="console">
+                    <div id="console-output"></div>
+                    <div id="console-input">
+                        <span class="prompt">></span>
+                        <input type="text" id="command-input" placeholder="Enter command...">
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Footer -->
+        <div id="terminal-footer">
+            <div class="footer-buttons">
+                <button id="btn-help">[HELP]</button>
+                <button id="btn-clear">[CLEAR]</button>
+                <button id="btn-reset">[RESET]</button>
+            </div>
+            <div class="footer-time">
+                Station Time: <span id="station-time">2347:142</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/sha256.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/terminal.js"></script>
+    <script src="js/modules/station-shell.js"></script>
+    <script src="js/modules/home.js"></script>
+    <script src="js/modules/chain-viewer.js"></script>
+    <script src="js/modules/network-monitor.js"></script>
+    <script src="js/modules/crypto-vault.js"></script>
+    <script src="js/modules/learning-guide.js"></script>
+    <script src="js/modules/protocol-engine.js"></script>
+    <script src="js/modules/econ-simulator.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

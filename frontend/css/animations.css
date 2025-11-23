@@ -1,0 +1,94 @@
+/* Animations and transitions */
+
+/* Fade in */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+/* Blink cursor */
+@keyframes blink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0;
+    }
+}
+
+.cursor-blink::after {
+    content: '_';
+    animation: blink 1s infinite;
+}
+
+/* Loading dots */
+@keyframes loadingDots {
+    0% {
+        content: '●○○';
+    }
+    33% {
+        content: '○●○';
+    }
+    66% {
+        content: '○○●';
+    }
+    100% {
+        content: '●○○';
+    }
+}
+
+.loading::after {
+    animation: loadingDots 1.5s infinite;
+}
+
+/* Pulse */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+    from {
+        transform: translateX(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* Highlight flash */
+@keyframes flash {
+    0%, 100% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: var(--color-dim);
+    }
+}
+
+.flash {
+    animation: flash 0.5s ease-in-out;
+}

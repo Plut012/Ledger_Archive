@@ -1,0 +1,351 @@
+/* Archive Captain Protocol - Tutorial Styling */
+
+/* Tutorial Overlay Container */
+.tutorial-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 14, 26, 0.98);
+    border-top: 2px solid var(--color-primary);
+    padding: var(--spacing-unit);
+    max-height: 45vh;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 -4px 20px rgba(0, 255, 0, 0.1);
+}
+
+.tutorial-overlay.active {
+    display: block;
+}
+
+/* Tutorial Header */
+.tutorial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-unit);
+    padding-bottom: calc(var(--spacing-unit) / 2);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tutorial-act-title {
+    font-size: 0.9em;
+    color: var(--color-primary);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.tutorial-skip {
+    font-size: 0.75em;
+    color: var(--color-dim);
+}
+
+/* Tutorial Content Area */
+.tutorial-content {
+    max-height: 30vh;
+    overflow-y: auto;
+    margin-bottom: var(--spacing-unit);
+    padding-right: calc(var(--spacing-unit) / 2);
+}
+
+/* Custom scrollbar for tutorial content */
+.tutorial-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tutorial-content::-webkit-scrollbar-track {
+    background: rgba(0, 255, 0, 0.05);
+}
+
+.tutorial-content::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 3px;
+}
+
+/* Tutorial Messages */
+.tutorial-messages {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing-unit) / 2);
+}
+
+.tutorial-message {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: var(--color-text);
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Speaker-specific styling */
+.tutorial-message.ai {
+    color: var(--color-primary);
+}
+
+.tutorial-message.system {
+    color: var(--color-accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    letter-spacing: 0.1em;
+}
+
+/* Typewriter cursor */
+.tutorial-message:last-child {
+    border-right: 2px solid var(--color-primary);
+    animation: blink 1s step-end infinite, fadeIn 0.3s forwards;
+}
+
+@keyframes blink {
+    50% {
+        border-color: transparent;
+    }
+}
+
+/* Tutorial Instruction */
+.tutorial-instruction {
+    margin-top: var(--spacing-unit);
+    padding: calc(var(--spacing-unit) / 2);
+    background: rgba(0, 255, 0, 0.05);
+    border-left: 3px solid var(--color-primary);
+    color: var(--color-highlight);
+    font-size: 0.9em;
+    animation: pulse 2s ease-in-out infinite;
+    display: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Progress Indicator */
+.tutorial-progress {
+    display: flex;
+    gap: calc(var(--spacing-unit) / 2);
+    justify-content: center;
+    align-items: center;
+    padding-top: calc(var(--spacing-unit) / 2);
+    border-top: 1px solid var(--color-border);
+}
+
+.act-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-border);
+    border: 1px solid var(--color-dim);
+    transition: all 0.3s ease;
+}
+
+.act-dot.completed {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.act-dot.current {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    animation: currentPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes currentPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+    }
+}
+
+/* Memory Fragment Effect */
+.memory-fragment {
+    animation: flicker 0.5s, fadeIn 1s;
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+@keyframes flicker {
+    0%, 100% {
+        opacity: 1;
+    }
+    25%, 75% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Concept Reference (in module view) */
+.concept-ref {
+    padding: calc(var(--spacing-unit) / 2);
+    margin: calc(var(--spacing-unit) / 2) 0;
+    border-left: 2px solid var(--color-border);
+    padding-left: var(--spacing-unit);
+    color: var(--color-text);
+    transition: all 0.2s ease;
+}
+
+.concept-ref:hover {
+    border-left-color: var(--color-primary);
+    background: rgba(0, 255, 0, 0.03);
+}
+
+/* Tutorial Complete Screen */
+.tutorial-complete {
+    text-align: center;
+    padding: calc(var(--spacing-unit) * 2);
+    animation: fadeIn 1s;
+}
+
+.tutorial-complete h2 {
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-unit);
+    font-size: 1.2em;
+    letter-spacing: 0.1em;
+}
+
+/* Accessibility: Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .tutorial-message,
+    .tutorial-instruction,
+    .act-dot,
+    .memory-fragment {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .tutorial-message:last-child {
+        animation: none;
+        border-right: none;
+    }
+}
+
+/* Responsive: Smaller screens */
+@media (max-width: 768px) {
+    .tutorial-overlay {
+        max-height: 50vh;
+    }
+
+    .tutorial-content {
+        max-height: 35vh;
+    }
+
+    .tutorial-message {
+        font-size: 0.85em;
+    }
+
+    .tutorial-act-title {
+        font-size: 0.8em;
+    }
+
+    .tutorial-skip {
+        font-size: 0.7em;
+    }
+}
+
+/* Screen Flash Effect (for dramatic moments) */
+@keyframes screenFlash {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.screen-flash {
+    animation: screenFlash 0.3s;
+}
+
+/* Data Stream Effect (optional visual enhancement) */
+@keyframes dataStream {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.data-stream {
+    animation: dataStream 0.5s ease-out;
+}
+
+/* Loading/Thinking Indicator */
+.tutorial-thinking {
+    display: inline-block;
+    color: var(--color-dim);
+}
+
+.tutorial-thinking::after {
+    content: '...';
+    animation: thinking 1.5s steps(4) infinite;
+}
+
+@keyframes thinking {
+    0% {
+        content: '';
+    }
+    25% {
+        content: '.';
+    }
+    50% {
+        content: '..';
+    }
+    75% {
+        content: '...';
+    }
+}
+
+/* Tutorial Button Styling */
+.tutorial-overlay button {
+    margin-top: var(--spacing-unit);
+}
+
+/* Hint Box (for stuck players) */
+.tutorial-hint {
+    margin-top: calc(var(--spacing-unit) / 2);
+    padding: calc(var(--spacing-unit) / 2);
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px dashed var(--color-accent);
+    color: var(--color-accent);
+    font-size: 0.85em;
+    border-radius: 2px;
+}
+
+/* Code Reference Tooltip */
+.code-reference {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    color: var(--color-dim);
+    margin-top: calc(var(--spacing-unit) / 4);
+    padding-left: calc(var(--spacing-unit) * 2);
+}
+
+.code-reference::before {
+    content: '└─ ';
+    color: var(--color-border);
+}
