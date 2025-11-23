@@ -52,6 +52,27 @@
     animation: pulse-warning 2s infinite;
 }
 
+.block-item.procedural {
+    border-style: dashed;
+    opacity: 0.7;
+}
+
+.block-item.procedural:hover {
+    opacity: 1;
+}
+
+/* Zoom level variations */
+.block-item.segment {
+    min-width: 100px;
+    background: rgba(0, 255, 100, 0.05);
+}
+
+.block-item.era {
+    min-width: 120px;
+    background: rgba(0, 255, 100, 0.1);
+    font-weight: bold;
+}
+
 @keyframes pulse-warning {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }

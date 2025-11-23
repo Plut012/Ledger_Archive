@@ -58,7 +58,10 @@ uv run pytest -v               # Run tests
 
 ## Open Issues
 
-<!-- Add new issues here -->
+#### [FEATURE]
+- **Priority**: high
+- **Details**: extension of the chain viewer. create imperiums default node network
+- **Desired behavior**: discuss with developer new ideas for how we could create a super cool chain viewer demonstrating the strength and vast size of the imperium. Keeping in mind our philosophy of simple and robust. (side note: even the name: chain viewer could be thematically refactored)
 
 ---
 

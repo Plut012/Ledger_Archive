@@ -180,11 +180,10 @@ const CryptoVault = {
                 // Fetch balance for new wallet
                 await this.fetchBalance();
 
-                // Re-render entire module to show balance section
-                const container = document.querySelector('.module-container');
+                // Re-render entire module to show balance section and new wallet
+                const container = document.getElementById('module-container');
                 if (container) {
                     this.render(container);
-                    this.setupEventListeners();
                 }
             } else {
                 App.log('Error: Failed to generate wallet');

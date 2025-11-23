@@ -5,6 +5,12 @@ const ChainViewer = {
     selectedBlock: null,
     tamperedBlock: null,  // Track tampered block data
 
+    // Infinite chain state
+    viewWindow: { start: 0, end: 20 },  // Current visible window
+    zoomLevel: 1,  // 1=blocks, 2=segments, 3=eras
+    totalBlocks: 850000,  // Simulated Imperium history
+    proceduralBlocks: new Map(),  // Cache for procedural blocks
+
     init(container) {
         this.render(container);
         this.fetchChain();
@@ -16,7 +22,23 @@ const ChainViewer = {
 
     render(container) {
         container.innerHTML = `
-            <div class="module-header">ARCHIVE CHAIN VIEWER</div>
+            <div class="module-header">CHAIN</div>
+
+            <div class="module-section">
+                <div class="section-title">[NAVIGATION]</div>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: var(--spacing-unit);">
+                    <button id="btn-zoom-out" title="Zoom out">−</button>
+                    <button id="btn-zoom-in" title="Zoom in">+</button>
+                    <span style="color: var(--color-dim); margin: 0 8px;">|</span>
+                    <button id="btn-scroll-left" title="Earlier blocks">←</button>
+                    <button id="btn-scroll-right" title="Later blocks">→</button>
+                    <button id="btn-jump-present" title="Jump to latest">⊙ Present</button>
+                    <span id="chain-position" style="margin-left: auto; color: var(--color-dim); font-size: 12px;"></span>
+                </div>
+                <div id="chain-minimap" style="height: 20px; background: rgba(0,255,100,0.1); border: 1px solid var(--color-dim); position: relative; margin-bottom: var(--spacing-unit);">
+                    <div id="minimap-indicator" style="position: absolute; height: 100%; background: rgba(0,255,100,0.3); border: 1px solid var(--color-primary);"></div>
+                </div>
+            </div>
 
             <div class="module-section">
                 <div class="section-title">[CHAIN VISUALIZATION]</div>
@@ -51,6 +73,13 @@ const ChainViewer = {
         document.getElementById('btn-mine')?.addEventListener('click', () => this.mineBlock());
         document.getElementById('btn-validate')?.addEventListener('click', () => this.validateChain());
         document.getElementById('btn-refresh')?.addEventListener('click', () => this.fetchChain());
+
+        // Navigation controls
+        document.getElementById('btn-zoom-in')?.addEventListener('click', () => this.zoomIn());
+        document.getElementById('btn-zoom-out')?.addEventListener('click', () => this.zoomOut());
+        document.getElementById('btn-scroll-left')?.addEventListener('click', () => this.scrollLeft());
+        document.getElementById('btn-scroll-right')?.addEventListener('click', () => this.scrollRight());
+        document.getElementById('btn-jump-present')?.addEventListener('click', () => this.jumpToPresent());
     },
 
     async fetchChain() {
@@ -71,45 +100,135 @@ const ChainViewer = {
 
         container.innerHTML = '';
 
-        this.blocks.forEach((block, index) => {
-            // Check if this block is tampered
+        // Render based on zoom level
+        switch (this.zoomLevel) {
+            case 1:
+                this.renderBlockView(container);
+                break;
+            case 2:
+                this.renderSegmentView(container);
+                break;
+            case 3:
+                this.renderEraView(container);
+                break;
+        }
+
+        this.updateMinimap();
+    },
+
+    renderBlockView(container) {
+        // Show individual blocks within the view window
+        const blocksToShow = Math.min(20, this.viewWindow.end - this.viewWindow.start);
+
+        for (let i = 0; i < blocksToShow; i++) {
+            const blockIndex = this.viewWindow.start + i;
+            if (blockIndex >= this.totalBlocks) break;
+
+            const block = this.getBlockForDisplay(blockIndex);
             const isTampered = this.tamperedBlock && this.tamperedBlock.index === block.index;
+            const isProcedural = block.is_procedural;
 
             // Create block element
             const blockEl = document.createElement('div');
-            blockEl.className = 'block-item' + (isTampered ? ' tampered' : '');
+            blockEl.className = 'block-item' + (isTampered ? ' tampered' : '') + (isProcedural ? ' procedural' : '');
             blockEl.textContent = `#${block.index}`;
-            blockEl.dataset.index = index;
+            blockEl.dataset.index = blockIndex;
+            blockEl.title = isProcedural ? 'Historical (procedural)' : 'Real block';
 
-            blockEl.addEventListener('click', () => this.selectBlock(index));
+            blockEl.addEventListener('click', () => this.selectBlock(blockIndex));
 
             container.appendChild(blockEl);
 
             // Add arrow if not last block
-            if (index < this.blocks.length - 1) {
+            if (i < blocksToShow - 1) {
                 const arrow = document.createElement('div');
                 arrow.className = 'block-arrow' + (isTampered ? ' broken' : '');
                 arrow.textContent = isTampered ? '✗' : '→';
                 container.appendChild(arrow);
             }
-        });
+        }
+    },
 
-        // Select latest block by default
-        if (this.blocks.length > 0 && this.selectedBlock === null) {
-            this.selectBlock(this.blocks.length - 1);
+    renderSegmentView(container) {
+        // Show clusters of 100 blocks
+        const segmentsToShow = 20;
+        const segmentSize = 100;
+
+        for (let i = 0; i < segmentsToShow; i++) {
+            const segmentStart = this.viewWindow.start + (i * segmentSize);
+            if (segmentStart >= this.totalBlocks) break;
+
+            const segmentEl = document.createElement('div');
+            segmentEl.className = 'block-item segment';
+            segmentEl.textContent = `#${segmentStart}-${segmentStart + segmentSize - 1}`;
+            segmentEl.dataset.index = segmentStart;
+            segmentEl.title = `100 blocks starting at #${segmentStart}`;
+
+            segmentEl.addEventListener('click', () => {
+                // Zoom into this segment
+                this.viewWindow.start = segmentStart;
+                this.viewWindow.end = segmentStart + segmentSize;
+                this.zoomLevel = 1;
+                App.log(`Zoomed into segment #${segmentStart}`);
+                this.renderChain();
+            });
+
+            container.appendChild(segmentEl);
+
+            if (i < segmentsToShow - 1 && segmentStart + segmentSize < this.totalBlocks) {
+                const arrow = document.createElement('div');
+                arrow.className = 'block-arrow';
+                arrow.textContent = '→';
+                container.appendChild(arrow);
+            }
+        }
+    },
+
+    renderEraView(container) {
+        // Show eras of 10,000 blocks
+        const erasToShow = 20;
+        const eraSize = 10000;
+
+        for (let i = 0; i < erasToShow; i++) {
+            const eraStart = this.viewWindow.start + (i * eraSize);
+            if (eraStart >= this.totalBlocks) break;
+
+            const eraEl = document.createElement('div');
+            eraEl.className = 'block-item era';
+            eraEl.textContent = `ERA ${Math.floor(eraStart / eraSize)}`;
+            eraEl.dataset.index = eraStart;
+            eraEl.title = `10,000 blocks: #${eraStart.toLocaleString()} - #${(eraStart + eraSize - 1).toLocaleString()}`;
+
+            eraEl.addEventListener('click', () => {
+                // Zoom into this era
+                this.viewWindow.start = eraStart;
+                this.viewWindow.end = eraStart + eraSize;
+                this.zoomLevel = 2;
+                App.log(`Zoomed into Era ${Math.floor(eraStart / eraSize)}`);
+                this.renderChain();
+            });
+
+            container.appendChild(eraEl);
+
+            if (i < erasToShow - 1 && eraStart + eraSize < this.totalBlocks) {
+                const arrow = document.createElement('div');
+                arrow.className = 'block-arrow';
+                arrow.textContent = '→';
+                container.appendChild(arrow);
+            }
         }
     },
 
     selectBlock(index) {
         this.selectedBlock = index;
-        const block = this.blocks[index];
+        const block = this.getBlockForDisplay(index);
 
         // Update global state for tutorial validation
         window.selectedBlockIndex = index;
 
-        // Update UI
-        document.querySelectorAll('.block-item').forEach((el, i) => {
-            el.classList.toggle('selected', i === index);
+        // Update UI - match by dataset.index instead of position
+        document.querySelectorAll('.block-item').forEach((el) => {
+            el.classList.toggle('selected', parseInt(el.dataset.index) === index);
         });
 
         this.renderBlockDetails(block);
@@ -331,9 +450,121 @@ const ChainViewer = {
         }
     },
 
+    // Navigation methods
+    zoomIn() {
+        if (this.zoomLevel > 1) {
+            this.zoomLevel--;
+            App.log(`Zoom: ${this.getZoomLevelName()}`);
+            this.renderChain();
+            this.updateMinimap();
+        }
+    },
+
+    zoomOut() {
+        if (this.zoomLevel < 3) {
+            this.zoomLevel++;
+            App.log(`Zoom: ${this.getZoomLevelName()}`);
+            this.renderChain();
+            this.updateMinimap();
+        }
+    },
+
+    scrollLeft() {
+        const step = this.getScrollStep();
+        if (this.viewWindow.start > 0) {
+            this.viewWindow.start = Math.max(0, this.viewWindow.start - step);
+            this.viewWindow.end = this.viewWindow.start + step;
+            this.renderChain();
+            this.updateMinimap();
+        }
+    },
+
+    scrollRight() {
+        const step = this.getScrollStep();
+        const maxStart = this.totalBlocks - step;
+        if (this.viewWindow.start < maxStart) {
+            this.viewWindow.start = Math.min(maxStart, this.viewWindow.start + step);
+            this.viewWindow.end = this.viewWindow.start + step;
+            this.renderChain();
+            this.updateMinimap();
+        }
+    },
+
+    jumpToPresent() {
+        // Jump to the actual blockchain (not procedural)
+        const realChainLength = this.blocks.length;
+        this.viewWindow.start = Math.max(0, realChainLength - 20);
+        this.viewWindow.end = realChainLength;
+        this.zoomLevel = 1; // Reset to block view
+        App.log('Jumped to present chain');
+        this.renderChain();
+        this.updateMinimap();
+    },
+
+    getScrollStep() {
+        // How many blocks to scroll based on zoom level
+        switch (this.zoomLevel) {
+            case 1: return 20;      // Block view
+            case 2: return 100;     // Segment view
+            case 3: return 10000;   // Era view
+            default: return 20;
+        }
+    },
+
+    getZoomLevelName() {
+        switch (this.zoomLevel) {
+            case 1: return 'Block View';
+            case 2: return 'Segment View (×100)';
+            case 3: return 'Era View (×10,000)';
+            default: return 'Unknown';
+        }
+    },
+
+    updateMinimap() {
+        const indicator = document.getElementById('minimap-indicator');
+        const position = document.getElementById('chain-position');
+
+        if (indicator && position) {
+            // Calculate position as percentage of total chain
+            const startPercent = (this.viewWindow.start / this.totalBlocks) * 100;
+            const widthPercent = ((this.viewWindow.end - this.viewWindow.start) / this.totalBlocks) * 100;
+
+            indicator.style.left = startPercent + '%';
+            indicator.style.width = widthPercent + '%';
+
+            // Update position text
+            position.textContent = `Blocks ${this.viewWindow.start.toLocaleString()} - ${this.viewWindow.end.toLocaleString()} / ${this.totalBlocks.toLocaleString()}`;
+        }
+    },
+
+    getBlockForDisplay(index) {
+        // Return real block if it exists, otherwise generate procedural
+        if (index < this.blocks.length) {
+            return this.blocks[index];
+        }
+
+        // Check cache first
+        if (this.proceduralBlocks.has(index)) {
+            return this.proceduralBlocks.get(index);
+        }
+
+        // Generate and cache
+        const block = ProceduralChain.generateBlock(index);
+        this.proceduralBlocks.set(index, block);
+
+        // Limit cache size to 1000 blocks
+        if (this.proceduralBlocks.size > 1000) {
+            const firstKey = this.proceduralBlocks.keys().next().value;
+            this.proceduralBlocks.delete(firstKey);
+        }
+
+        return block;
+    },
+
     cleanup() {
         // Cleanup when module is unloaded
         this.blocks = [];
         this.selectedBlock = null;
+        this.proceduralBlocks.clear();
     }
 };

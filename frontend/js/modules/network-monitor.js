@@ -10,28 +10,32 @@ const NetworkMonitor = {
 
     async init(container) {
         container.innerHTML = `
-            <div class="module-header">NETWORK LATTICE MONITOR</div>
+            <div class="module-header">NETWORK</div>
 
-            <div class="module-section">
-                <canvas id="network-canvas" width="500" height="400" style="border: 1px solid #00ff00; background: #000;"></canvas>
-            </div>
+            <div style="display: flex; gap: calc(var(--spacing-unit) * 2);">
+                <!-- Left sidebar with controls -->
+                <div style="flex: 0 0 220px;">
+                    <div class="module-section">
+                        <div class="section-title">[NETWORK ACTIONS]</div>
+                        <button onclick="NetworkMonitor.broadcastTestTransaction()" style="width: 100%; margin-bottom: 8px;">Broadcast Test TX</button>
+                        <button onclick="NetworkMonitor.refreshTopology()" style="width: 100%;">Refresh Topology</button>
+                    </div>
 
-            <div class="module-section">
-                <div class="section-header">NODE DETAILS</div>
-                <div id="node-details">
-                    <div style="color: #666;">Click a node to view details</div>
+                    <div class="module-section">
+                        <div class="section-title">[NODE DETAILS]</div>
+                        <div id="node-details">
+                            <div style="color: #666; font-size: 14px;">Click a node to view details</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="module-section">
-                <div class="section-header">NETWORK ACTIONS</div>
-                <button onclick="NetworkMonitor.broadcastTestTransaction()">Broadcast Test TX</button>
-                <button onclick="NetworkMonitor.refreshTopology()">Refresh Topology</button>
-            </div>
-
-            <div class="module-section">
-                <div class="section-header">ACTIVITY LOG</div>
-                <div id="network-log" style="max-height: 100px; overflow-y: auto; font-size: 0.85em;"></div>
+                <!-- Main canvas area -->
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+                    <div class="module-section" style="margin: 0;">
+                        <div class="section-title" style="text-align: center; margin-bottom: var(--spacing-unit);">[IMPERIUM TOPOLOGY - 50 NODES]</div>
+                        <canvas id="network-canvas" width="1000" height="600" style="border: 1px solid #00ff00; background: #000; display: block;"></canvas>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -52,14 +56,15 @@ const NetworkMonitor = {
             this.topology = await response.json();
             this.draw();
         } catch (error) {
-            this.log('Error loading topology: ' + error.message);
+            console.error('Error loading topology:', error);
+            App.log('Error loading network topology');
         }
     },
 
     async refreshTopology() {
-        this.log('Refreshing network topology...');
+        App.log('Refreshing network topology...');
         await this.loadTopology();
-        this.log('Topology refreshed');
+        App.log('Topology refreshed');
     },
 
     draw() {
@@ -68,53 +73,131 @@ const NetworkMonitor = {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw connections first (so they appear behind nodes)
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 1;
-        this.topology.connections.forEach(([fromId, toId]) => {
-            const fromNode = this.topology.nodes.find(n => n.id === fromId);
-            const toNode = this.topology.nodes.find(n => n.id === toId);
+        // Sort nodes by layer (background to foreground) for proper rendering
+        const sortedNodes = [...this.topology.nodes].sort((a, b) => b.layer - a.layer);
 
-            if (fromNode && toNode) {
-                ctx.beginPath();
-                ctx.moveTo(fromNode.x, fromNode.y);
-                ctx.lineTo(toNode.x, toNode.y);
-                ctx.stroke();
-            }
+        // Draw connections grouped by layer
+        for (let layer = 3; layer >= 1; layer--) {
+            this.drawConnectionsForLayer(ctx, layer);
+        }
+
+        // Draw nodes from back to front
+        sortedNodes.forEach(node => {
+            this.drawNode(ctx, node);
         });
 
-        // Draw nodes
-        this.topology.nodes.forEach(node => {
-            const isSelected = this.selectedNode && this.selectedNode.id === node.id;
-
-            // Node circle
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, isSelected ? 12 : 8, 0, 2 * Math.PI);
-            ctx.fillStyle = isSelected ? '#ffff00' : '#00ff00';
-            ctx.fill();
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Node label
-            ctx.fillStyle = '#00ff00';
-            ctx.font = '12px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(node.label, node.x, node.y - 15);
-
-            // Height indicator
-            ctx.font = '10px monospace';
-            ctx.fillStyle = '#666';
-            ctx.fillText(`#${node.height}`, node.x, node.y + 25);
-        });
-
-        // Draw transaction animations
+        // Draw transaction animations (always on top)
         this.txAnimations.forEach(anim => {
             ctx.beginPath();
             ctx.arc(anim.x, anim.y, 4, 0, 2 * Math.PI);
             ctx.fillStyle = '#ff00ff';
             ctx.fill();
         });
+    },
+
+    drawConnectionsForLayer(ctx, layer) {
+        const layerProps = this.getLayerProperties(layer);
+
+        this.topology.connections.forEach(([fromId, toId]) => {
+            const fromNode = this.topology.nodes.find(n => n.id === fromId);
+            const toNode = this.topology.nodes.find(n => n.id === toId);
+
+            // Only draw if at least one node is in this layer
+            if (fromNode && toNode && (fromNode.layer === layer || toNode.layer === layer)) {
+                ctx.beginPath();
+                ctx.moveTo(fromNode.x, fromNode.y);
+                ctx.lineTo(toNode.x, toNode.y);
+                ctx.strokeStyle = layerProps.connectionColor;
+                ctx.lineWidth = layerProps.connectionWidth;
+                ctx.globalAlpha = layerProps.alpha;
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            }
+        });
+    },
+
+    drawNode(ctx, node) {
+        const isSelected = this.selectedNode && this.selectedNode.id === node.id;
+        const layerProps = this.getLayerProperties(node.layer);
+
+        // Node glow effect (for foreground nodes)
+        if (node.layer === 1 && !isSelected) {
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, layerProps.size + 4, 0, 2 * Math.PI);
+            ctx.fillStyle = layerProps.glowColor;
+            ctx.globalAlpha = 0.3;
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+
+        // Node circle
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, isSelected ? layerProps.size + 4 : layerProps.size, 0, 2 * Math.PI);
+        ctx.fillStyle = isSelected ? '#ffff00' : layerProps.color;
+        ctx.globalAlpha = layerProps.alpha;
+        ctx.fill();
+        ctx.strokeStyle = layerProps.borderColor;
+        ctx.lineWidth = isSelected ? 2 : 1;
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+
+        // Node label (only show for layer 1 and 2, or if selected)
+        if (node.layer <= 2 || isSelected) {
+            ctx.fillStyle = layerProps.textColor;
+            ctx.font = `${layerProps.fontSize}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.globalAlpha = layerProps.alpha;
+            ctx.fillText(node.label, node.x, node.y - layerProps.size - 5);
+            ctx.globalAlpha = 1.0;
+        }
+
+        // Height indicator (only for selected or layer 1)
+        if (isSelected || node.layer === 1) {
+            ctx.font = '9px monospace';
+            ctx.fillStyle = '#666';
+            ctx.fillText(`#${node.height}`, node.x, node.y + layerProps.size + 12);
+        }
+    },
+
+    getLayerProperties(layer) {
+        // Layer-based visual properties for 2.5D effect
+        const props = {
+            1: {  // Foreground - Core Archives
+                size: 10,
+                color: '#00ff00',
+                borderColor: '#00ff00',
+                glowColor: 'rgba(0, 255, 100, 0.5)',
+                textColor: '#00ff00',
+                connectionColor: 'rgba(0, 255, 100, 0.8)',
+                connectionWidth: 2,
+                fontSize: 11,
+                alpha: 1.0
+            },
+            2: {  // Mid - Sector Hubs
+                size: 7,
+                color: '#00cc66',
+                borderColor: '#00cc66',
+                glowColor: 'rgba(0, 204, 102, 0.3)',
+                textColor: '#00cc66',
+                connectionColor: 'rgba(0, 204, 102, 0.5)',
+                connectionWidth: 1.5,
+                fontSize: 10,
+                alpha: 0.7
+            },
+            3: {  // Background - Frontier Stations
+                size: 5,
+                color: '#009944',
+                borderColor: '#009944',
+                glowColor: 'rgba(0, 153, 68, 0.2)',
+                textColor: '#009944',
+                connectionColor: 'rgba(0, 153, 68, 0.3)',
+                connectionWidth: 1,
+                fontSize: 9,
+                alpha: 0.5
+            }
+        };
+
+        return props[layer] || props[1];
     },
 
     handleCanvasClick(event) {
@@ -143,16 +226,17 @@ const NetworkMonitor = {
             const details = await response.json();
 
             if (details.error) {
-                this.log('Error: ' + details.error);
+                App.log('Error: ' + details.error);
                 return;
             }
 
             this.selectedNode = details;
             this.updateNodeDetails(details);
             this.draw();
-            this.log(`Selected node: ${details.label}`);
+            App.log(`Selected: ${details.label}`);
         } catch (error) {
-            this.log('Error fetching node details: ' + error.message);
+            console.error('Error fetching node details:', error);
+            App.log('Error fetching node details');
         }
     },
 
@@ -185,7 +269,8 @@ const NetworkMonitor = {
                 origin_node: this.selectedNode ? this.selectedNode.id : 'node_0'
             };
 
-            this.log(`Broadcasting transaction from ${testTx.origin_node}...`);
+            const originLabel = this.selectedNode ? this.selectedNode.label : 'node_0';
+            App.log(`Broadcasting TX from ${originLabel}...`);
 
             const response = await fetch('/api/network/broadcast', {
                 method: 'POST',
@@ -198,17 +283,18 @@ const NetworkMonitor = {
             const result = await response.json();
 
             if (result.status === 'broadcasted') {
-                this.log(`TX ${result.tx_hash.substring(0, 8)}... broadcasted from ${result.origin}`);
+                App.log(`TX ${result.tx_hash.substring(0, 8)}... propagated to network`);
 
                 // Update global state for tutorial validation
                 window.lastBroadcastPaths = result.propagation_paths;
 
                 this.animatePropagation(result.propagation_paths);
             } else {
-                this.log('Broadcast failed: ' + result.message);
+                App.log('Broadcast failed');
             }
         } catch (error) {
-            this.log('Error broadcasting transaction: ' + error.message);
+            console.error('Error broadcasting transaction:', error);
+            App.log('Error broadcasting transaction');
         }
     },
 
@@ -299,23 +385,6 @@ const NetworkMonitor = {
             this.animationFrame = requestAnimationFrame(animate);
         };
         animate();
-    },
-
-    log(message) {
-        const logDiv = document.getElementById('network-log');
-        if (!logDiv) return;
-
-        const timestamp = new Date().toLocaleTimeString();
-        const entry = document.createElement('div');
-        entry.style.color = '#00ff00';
-        entry.textContent = `[${timestamp}] ${message}`;
-
-        logDiv.insertBefore(entry, logDiv.firstChild);
-
-        // Keep only last 10 entries
-        while (logDiv.children.length > 10) {
-            logDiv.removeChild(logDiv.lastChild);
-        }
     },
 
     cleanup() {

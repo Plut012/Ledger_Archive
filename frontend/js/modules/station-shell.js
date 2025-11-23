@@ -172,19 +172,17 @@ AVAILABLE PROTOCOLS:
         output.innerHTML = '';
 
         // Boot sequence
-        await this.print('ARCHIVE STATION ALPHA :: EMERGENCY BOOT', 'system', 50);
-        await this.wait(300);
-        await this.print('SYSTEM STATUS: OPERATIONAL', 'system', 50);
-        await this.wait(300);
-        await this.print('CAPTAIN NEURAL INTERFACE: RECONNECTING...', 'system', 50);
-        await this.wait(800);
+        await this.print('ARCHIVE STATION ALPHA :: EMERGENCY BOOT', 'system', 20);
+        await this.wait(200);
+        await this.print('SYSTEM STATUS: OPERATIONAL', 'system', 20);
+        await this.wait(200);
+        await this.print('CAPTAIN NEURAL INTERFACE: RECONNECTING...', 'system', 20);
+        await this.wait(400);
         await this.print('');
-        await this.print('> AXIOM: Captain... can you hear me?', 'axiom', 30);
-        await this.wait(1000);
-        await this.print('> AXIOM: Your workstation terminal is online.', 'axiom', 30);
-        await this.wait(800);
-        await this.print('> AXIOM: Navigate to ~/protocols/ to begin memory restoration.', 'axiom', 30);
-        await this.wait(500);
+        await this.print('> AXIOM: Your workstation terminal is online.', 'axiom', 15);
+        await this.wait(400);
+        await this.print('> AXIOM: Navigate to ~/protocols/ to begin memory restoration.', 'axiom', 15);
+        await this.wait(300);
         await this.print('');
         await this.print("Type 'help' for available commands.", 'dim');
         await this.print('');
