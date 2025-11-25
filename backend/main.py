@@ -171,8 +171,8 @@ def generate_wallet():
         "status": "success",
         "wallet": {
             "address": wallet.address,
-            "public_key": wallet.public_key,
-            "private_key": wallet.private_key
+            "public_key": wallet.get_public_key_pem(),
+            "private_key": wallet.get_private_key_pem()
         },
         "warning": "Keep your private key secure! This is for educational purposes only."
     }

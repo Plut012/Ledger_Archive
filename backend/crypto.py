@@ -1,71 +1,59 @@
 """Cryptographic primitives for keys and signatures."""
 
-# ============================================================
-# PHASE 1: Implement Real Cryptography
-# ============================================================
-#
-# Goals:
-# 1. Generate public/private key pairs
-# 2. Sign messages with private key
-# 3. Verify signatures with public key
-# 4. Keep implementation simple and educational
-#
-# Implementation Notes:
-# - Use Python's built-in secrets module for randomness
-# - Use hashlib for hashing
-# - Store keys as hex strings for easy display/debug
-# - Don't need full Bitcoin-style crypto (keep simple)
-#
-# See: docs/phase1_plan.md for full details
-# ============================================================
-
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.exceptions import InvalidSignature
 import hashlib
-import secrets
-from typing import Tuple
 
 
 class Wallet:
-    """Simple wallet with key pair and signing capability."""
+    """Simple wallet with ECDSA key pair and signing capability."""
 
     def __init__(self):
         """Initialize empty wallet. Call generate_keypair() to create keys."""
-        self.private_key = ""
-        self.public_key = ""
+        self.private_key = None
+        self.public_key = None
         self.address = ""
+        self._private_key_pem = ""
+        self._public_key_pem = ""
 
     def generate_keypair(self):
         """
-        Generate new public/private key pair.
+        Generate new ECDSA public/private key pair.
 
-        Implementation:
-        1. Generate random private key using secrets.token_hex(32)
-        2. Derive public key from private key (using hash for simplicity)
-        3. Generate address from public key using generate_address()
-        4. Store in self.private_key, self.public_key, self.address
+        Uses SECP256k1 curve (same as Bitcoin/Ethereum) for educational alignment.
+        Keys are stored in PEM format for portability and readability.
 
         Returns:
             None (modifies self)
         """
-        # Generate random 256-bit private key
-        self.private_key = secrets.token_hex(32)
+        # Generate SECP256k1 private key (same curve as Bitcoin)
+        self.private_key = ec.generate_private_key(ec.SECP256K1())
 
-        # Derive public key from private key (simplified approach)
-        # In real crypto systems, this would use elliptic curve multiplication
-        self.public_key = hashlib.sha256(self.private_key.encode()).hexdigest()
+        # Derive public key from private key (automatic via elliptic curve math)
+        self.public_key = self.private_key.public_key()
 
-        # Generate address from public key
-        self.address = generate_address(self.public_key)
+        # Serialize keys to PEM format (human-readable, standard format)
+        self._private_key_pem = self.private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        ).decode('utf-8')
+
+        self._public_key_pem = self.public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        ).decode('utf-8')
+
+        # Generate address from public key (hash of public key bytes)
+        self.address = generate_address(self._public_key_pem)
 
     def sign(self, message: str) -> str:
         """
-        Sign a message with private key.
+        Sign a message with private key using ECDSA.
 
-        Implementation:
-        Creates a signature by combining the message, private key, and public key.
-        The signature can be verified using only the message, signature, and public key.
-
-        Note: This is a simplified signing scheme for educational purposes.
-        Real systems use ECDSA or other proper signature algorithms.
+        Creates a cryptographically secure signature that can be verified
+        using only the message, signature, and public key.
 
         Args:
             message: The message to sign
@@ -76,67 +64,70 @@ class Wallet:
         if not self.private_key:
             raise ValueError("Cannot sign without a private key. Call generate_keypair() first.")
 
-        # Hash the message
-        message_hash = hashlib.sha256(message.encode()).hexdigest()
+        # Sign message using ECDSA with SHA256
+        signature_bytes = self.private_key.sign(
+            message.encode('utf-8'),
+            ec.ECDSA(hashes.SHA256())
+        )
 
-        # Create signature by hashing message_hash + private_key + public_key
-        # Including public_key makes verification possible
-        signature_input = f"{message_hash}{self.private_key}{self.public_key}"
-        signature = hashlib.sha256(signature_input.encode()).hexdigest()
-
-        return signature
+        # Convert to hex string for easy transmission/storage
+        return signature_bytes.hex()
 
     @staticmethod
-    def verify(message: str, signature: str, public_key: str) -> bool:
+    def verify(message: str, signature: str, public_key_pem: str) -> bool:
         """
-        Verify a signature against a message and public key.
+        Verify an ECDSA signature against a message and public key.
 
-        Implementation:
-        For our educational system, we verify that the signature is well-formed
-        and was created using the correct message and public key.
-
-        Note: This is simplified crypto for educational purposes.
-        Real systems use ECDSA with elliptic curve math that allows full verification.
-        In our simplified scheme, verification checks format and consistency.
+        This is real cryptographic verification - the signature can only be
+        created by someone holding the private key corresponding to the public key.
 
         Args:
             message: The original message
-            signature: The signature to verify
-            public_key: Public key to verify against
+            signature: The signature to verify (hex string)
+            public_key_pem: Public key in PEM format
 
         Returns:
             True if signature is valid, False otherwise
         """
-        if not signature or not public_key:
-            return False
-
-        # Check signature format (should be 64 hex characters = 32 bytes)
-        if len(signature) != 64:
+        if not signature or not public_key_pem:
             return False
 
         try:
-            # Verify signature is valid hexadecimal
-            int(signature, 16)
-        except ValueError:
+            # Convert hex signature back to bytes
+            signature_bytes = bytes.fromhex(signature)
+
+            # Load public key from PEM format
+            public_key = serialization.load_pem_public_key(public_key_pem.encode('utf-8'))
+
+            # Verify signature using ECDSA
+            public_key.verify(
+                signature_bytes,
+                message.encode('utf-8'),
+                ec.ECDSA(hashes.SHA256())
+            )
+
+            # If no exception raised, signature is valid
+            return True
+
+        except (ValueError, InvalidSignature):
+            # Invalid signature format or verification failed
             return False
 
-        # Hash the message (same as during signing)
-        message_hash = hashlib.sha256(message.encode()).hexdigest()
+    def get_public_key_pem(self) -> str:
+        """Get public key in PEM format for sharing."""
+        return self._public_key_pem
 
-        # In our educational scheme, the signature was created as:
-        # hash(message_hash + private_key + public_key)
-        # We can't recreate this without the private_key
-        # However, the structure ensures that:
-        # 1. Only the holder of private_key could create this specific signature
-        # 2. The signature is tied to both the message and the public_key
-        # 3. Changing the message or using a different key would produce a different signature
-
-        # For educational purposes, we verify format and trust the signature
-        # was created by the private key holder (since only they could generate it)
-        return True
+    def get_private_key_pem(self) -> str:
+        """Get private key in PEM format. Keep this secret!"""
+        return self._private_key_pem
 
 
-def generate_address(public_key: str) -> str:
-    """Generate address from public key."""
-    # Simplified address generation
-    return hashlib.sha256(public_key.encode()).hexdigest()[:40]
+def generate_address(public_key_pem: str) -> str:
+    """
+    Generate address from public key.
+
+    Uses simple hash of public key for educational purposes.
+    Real systems use more complex derivation (e.g., Bitcoin's Base58Check).
+    """
+    # Hash the public key to create address
+    return hashlib.sha256(public_key_pem.encode()).hexdigest()[:40]
