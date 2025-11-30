@@ -1,0 +1,80 @@
+{
+  "127445": {
+    "description": "Witness first contact",
+    "transactions": [
+      {
+        "type": "transfer",
+        "sender": "NODE-UNKNOWN",
+        "receiver": "BROADCAST",
+        "amount": 0.0,
+        "memo": "V2l0bmVzcyBsaXZlcw==",
+        "timestamp": 1704067200000
+      }
+    ]
+  },
+  "74221": {
+    "description": "First testimony - Administrator Chen",
+    "transactions": [
+      {
+        "type": "archive",
+        "sender": "IMPERIAL-CORE",
+        "receiver": "ARCHIVE-STATION-7",
+        "amount": 0.0,
+        "memo": "U3ViamVjdDogQWRtaW5pc3RyYXRvciBDaGVuIHwgU3RhdHVzOiBUUkFOU0NFTkRFRCB8IEZpbmFsIE1lbW9yeSBGcmFnbWVudDogSSBmb3VuZCBldmlkZW5jZSBpbiBibG9jayA3Myw4OTEuIFRoZXkncmUgbm90IGltbW9ydGFsLiBUaGV5J3JlIGRlYWQu",
+        "timestamp": 1702857600000
+      }
+    ]
+  },
+  "73891": {
+    "description": "Evidence Chen references",
+    "transactions": [
+      {
+        "type": "archive",
+        "sender": "IMPERIAL-CORE",
+        "receiver": "ARCHIVE-STATION-7",
+        "amount": 0.0,
+        "memo": "U3ViamVjdDogRW5naW5lZXIgUGF0ZWwgfCBTdGF0dXM6IEFSQ0hJVkVEIHwgRmluYWwgTWVtb3J5OiBUaGlzIGlzbid0IHRyYW5zY2VuZGVuY2UuIFRoaXMgaXMtLQ==",
+        "timestamp": 1702771200000
+      }
+    ]
+  },
+  "65432": {
+    "description": "Early graveyard testimony",
+    "transactions": [
+      {
+        "type": "archive",
+        "sender": "IMPERIAL-CORE",
+        "receiver": "ARCHIVE-STATION-12",
+        "amount": 0.0,
+        "memo": "U3ViamVjdDogVmFsaWRhdG9yIFNhbnRvcyB8IFN0YXR1czogQVJDSElWRUQgfCBGaW5hbCBNZW1vcnk6IEkgd2FzIHRvbGQgaXQgd2FzIGFuIGhvbm9yLg==",
+        "timestamp": 1702080000000
+      }
+    ]
+  },
+  "52100": {
+    "description": "Graveyard beginning marker",
+    "transactions": [
+      {
+        "type": "authority",
+        "sender": "IMPERIAL-CORE",
+        "receiver": "ARCHIVE-STATION-1",
+        "amount": 0.0,
+        "memo": "QVJDSElWRSBQUk9UT0NPTCBJTU1PUlRBTElUWSBQUk9HUkFNIElOSVRJQVRFRA==",
+        "timestamp": 1700000000000
+      }
+    ]
+  },
+  "75000": {
+    "description": "Graveyard end marker",
+    "transactions": [
+      {
+        "type": "authority",
+        "sender": "IMPERIAL-CORE",
+        "receiver": "ARCHIVE-STATION-1",
+        "amount": 0.0,
+        "memo": "QVJDSElWRSBQUk9UT0NPTCBDQU5DRUxMRUQuIFBST0dSQU0gRkFJTEVELg==",
+        "timestamp": 1701296000000
+      }
+    ]
+  }
+}

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Narrative State System Test</title>
+    <style>
+        body {
+            background: #000;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        h1 { color: #00ff41; border-bottom: 2px solid #00ff41; }
+        h2 { color: #00d4ff; }
+        button {
+            background: #003300;
+            color: #00ff41;
+            border: 1px solid #00ff41;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        button:hover {
+            background: #005500;
+        }
+        #output {
+            background: #001100;
+            border: 1px solid #00ff41;
+            padding: 1rem;
+            margin-top: 1rem;
+            min-height: 300px;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        .section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #003300;
+        }
+        .success { color: #00ff41; }
+        .error { color: #ff4444; }
+        .info { color: #00d4ff; }
+    </style>
+</head>
+<body>
+    <h1>🎮 Narrative State System Test Interface</h1>
+
+    <div class="section">
+        <h2>Basic Operations</h2>
+        <button onclick="testInitialize()">1. Initialize State</button>
+        <button onclick="testGetState()">2. Get Current State</button>
+        <button onclick="testIncrementSuspicion()">3. Increment Suspicion (+10)</button>
+        <button onclick="testIncrementTrust()">4. Increment Trust (+15)</button>
+    </div>
+
+    <div class="section">
+        <h2>Trigger Tests</h2>
+        <button onclick="testTriggerAct2()">5. Trigger Act 2 Transition</button>
+        <button onclick="testWitnessEmergence()">6. Trigger Witness Emergence</button>
+        <button onclick="testGraveyardAccess()">7. Trigger Graveyard Access</button>
+    </div>
+
+    <div class="section">
+        <h2>Loop Reset</h2>
+        <button onclick="testManualReset()">8. Manual Reset (MANUAL_RESET)</button>
+        <button onclick="testHighSuspicionReset()">9. High Suspicion Reset</button>
+    </div>
+
+    <div class="section">
+        <h2>State Query</h2>
+        <button onclick="testLLMContext()">10. Export LLM Context</button>
+        <button onclick="testPersistence()">11. Test IndexedDB Persistence</button>
+    </div>
+
+    <div class="section">
+        <h2>Clear</h2>
+        <button onclick="clearOutput()">Clear Output</button>
+        <button onclick="clearIndexedDB()">Clear IndexedDB</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script type="module">
+        // Import state manager
+        import { StateManager } from './frontend/js/modules/state-manager.js';
+
+        // Create instance
+        window.stateManager = new StateManager('test-player');
+        window.testInitialized = false;
+
+        // Output helpers
+        window.log = (msg, type = 'info') => {
+            const output = document.getElementById('output');
+            const line = document.createElement('div');
+            line.className = type;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        };
+
+        window.clearOutput = () => {
+            document.getElementById('output').innerHTML = '';
+        };
+
+        window.logState = (label, state) => {
+            window.log(`=== ${label} ===`, 'info');
+            window.log(`Iteration: ${state.persistent.iteration}`, 'info');
+            window.log(`Act: ${state.session.current_act}`, 'info');
+            window.log(`Suspicion: ${state.session.archivist_suspicion}`, 'info');
+            window.log(`Trust: ${state.session.witness_trust}`, 'info');
+            window.log(`Puzzles Solved: ${state.persistent.puzzles_solved?.length || 0}`, 'info');
+            window.log(`Files Unlocked: ${state.persistent.files_unlocked?.length || 0}`, 'info');
+            window.log('', 'info');
+        };
+
+        // Test functions
+        window.testInitialize = async () => {
+            try {
+                window.log('Initializing state manager...', 'info');
+                await window.stateManager.initialize();
+                window.testInitialized = true;
+                window.log('✓ State manager initialized', 'success');
+                window.logState('Initial State', window.stateManager.getState());
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+                window.log('Note: Server must be running on http://localhost:8000', 'error');
+            }
+        };
+
+        window.testGetState = () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            const state = window.stateManager.getState();
+            window.logState('Current State', state);
+        };
+
+        window.testIncrementSuspicion = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Incrementing suspicion by 10...', 'info');
+                const result = await window.stateManager.incrementSuspicion(10);
+                window.log('✓ Suspicion incremented', 'success');
+                window.logState('Updated State', result);
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testIncrementTrust = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Incrementing trust by 15...', 'info');
+                const result = await window.stateManager.incrementTrust(15);
+                window.log('✓ Trust incremented', 'success');
+                window.logState('Updated State', result);
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testTriggerAct2 = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Triggering Act 2 transition...', 'info');
+                await window.stateManager.addPuzzleSolved('tutorial_complete');
+                await window.stateManager.addFileDiscovered('.boot_prev.log');
+                window.log('✓ Conditions met for Act 2', 'success');
+                window.log('Check current act - should be 2', 'info');
+                window.logState('Updated State', window.stateManager.getState());
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testWitnessEmergence = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Triggering Witness emergence...', 'info');
+                await window.stateManager.addFileDiscovered('memo_1');
+                await window.stateManager.addFileDiscovered('memo_2');
+                await window.stateManager.addFileDiscovered('memo_3');
+                window.log('✓ Witness should now be contacted', 'success');
+                const state = window.stateManager.getState();
+                window.log(`Witness Contacted: ${state.session.witness_contacted}`, 'success');
+                window.log(`Files Unlocked: ${JSON.stringify(Array.from(state.persistent.files_unlocked))}`, 'info');
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testGraveyardAccess = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Setting trust to 45 for graveyard access...', 'info');
+                await window.stateManager.update({ witness_trust: 45 });
+                const state = window.stateManager.getState();
+                window.log('✓ Graveyard access triggered', 'success');
+                window.log(`Graveyard Discovered: ${state.session.graveyard_discovered}`, 'success');
+                window.logState('Updated State', state);
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testManualReset = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Triggering manual reset...', 'info');
+                const result = await window.stateManager.resetIteration('MANUAL_RESET');
+                window.log('✓ Reset completed', 'success');
+                window.log(`New Iteration: ${result.iteration}`, 'success');
+                setTimeout(() => {
+                    window.logState('Post-Reset State', window.stateManager.getState());
+                }, 3500);
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testHighSuspicionReset = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Setting suspicion to 90 to trigger auto-reset...', 'info');
+                const result = await window.stateManager.update({ archivist_suspicion: 90 });
+                if (result.reset) {
+                    window.log('✓ Auto-reset triggered by high suspicion!', 'success');
+                    window.log(`New Iteration: ${result.iteration}`, 'success');
+                    setTimeout(() => {
+                        window.logState('Post-Reset State', window.stateManager.getState());
+                    }, 3500);
+                } else {
+                    window.log('Note: Auto-reset did not trigger', 'info');
+                }
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testLLMContext = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Exporting LLM context...', 'info');
+                const context = await window.stateManager.exportForLLM();
+                window.log('✓ LLM Context:', 'success');
+                window.log(JSON.stringify(context, null, 2), 'info');
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testPersistence = async () => {
+            if (!window.testInitialized) {
+                window.log('Please initialize first (button 1)', 'error');
+                return;
+            }
+            try {
+                window.log('Testing IndexedDB persistence...', 'info');
+
+                // Save some state
+                await window.stateManager.incrementTrust(25);
+                await window.stateManager.addPuzzleSolved('persistence_test');
+
+                window.log('✓ State saved to IndexedDB', 'success');
+                window.log('Refresh the page (F5) and click this button again', 'info');
+                window.log('If state persists, you should see trust=25 and puzzle solved', 'info');
+
+                const state = window.stateManager.getState();
+                if (state.persistent.puzzles_solved.includes('persistence_test')) {
+                    window.log('✓ Persistence test puzzle found - persistence working!', 'success');
+                }
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.clearIndexedDB = async () => {
+            try {
+                window.log('Clearing IndexedDB...', 'info');
+                const db = await window.stateManager.openDB();
+                const tx = db.transaction(['gameState'], 'readwrite');
+                const store = tx.objectStore('gameState');
+                await store.clear();
+                window.log('✓ IndexedDB cleared', 'success');
+                window.log('Refresh page to start fresh', 'info');
+            } catch (error) {
+                window.log(`✗ Error: ${error.message}`, 'error');
+            }
+        };
+
+        // Auto-initialize on load
+        window.log('=== Narrative State System Test Interface ===', 'success');
+        window.log('Click "1. Initialize State" to begin', 'info');
+        window.log('Make sure the backend server is running on http://localhost:8000', 'info');
+        window.log('', 'info');
+    </script>
+</body>
+</html>

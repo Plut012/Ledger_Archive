@@ -7,6 +7,11 @@ const NetworkMonitor = {
     ctx: null,
     animationFrame: null,
     txAnimations: [],
+    deadStations: new Set(),
+    collapseActive: false,
+    playerWeight: 2.0,
+    stationsActive: 50,
+    deathAnimations: [], // { stationId, phase, progress }
 
     async init(container) {
         container.innerHTML = `
@@ -21,6 +26,17 @@ const NetworkMonitor = {
                         <button onclick="NetworkMonitor.refreshTopology()" style="width: 100%;">Refresh Topology</button>
                     </div>
 
+                    <div class="module-section" id="consensus-weight-panel">
+                        <div class="section-title">[CONSENSUS WEIGHT]</div>
+                        <div id="weight-display">
+                            <div style="font-size: 24px; color: #00ff00; margin-bottom: 8px;" id="player-weight">2.0%</div>
+                            <div style="font-size: 12px; color: #666;" id="stations-active">50/50 Stations Online</div>
+                            <div id="weight-warning" style="display: none; margin-top: 8px; padding: 8px; background: rgba(255, 107, 53, 0.2); border: 1px solid var(--color-accent); color: var(--color-accent); font-size: 11px;">
+                                WARNING: APPROACHING CRITICAL CONSENSUS THRESHOLD
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="module-section">
                         <div class="section-title">[NODE DETAILS]</div>
                         <div id="node-details">
@@ -32,7 +48,7 @@ const NetworkMonitor = {
                 <!-- Main canvas area -->
                 <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
                     <div class="module-section" style="margin: 0;">
-                        <div class="section-title" style="text-align: center; margin-bottom: var(--spacing-unit);">[IMPERIUM TOPOLOGY - 50 NODES]</div>
+                        <div class="section-title" style="text-align: center; margin-bottom: var(--spacing-unit);" id="topology-header">[IMPERIUM TOPOLOGY - 50 NODES]</div>
                         <canvas id="network-canvas" width="1000" height="600" style="border: 1px solid #00ff00; background: #000; display: block;"></canvas>
                     </div>
                 </div>
@@ -102,6 +118,14 @@ const NetworkMonitor = {
             const fromNode = this.topology.nodes.find(n => n.id === fromId);
             const toNode = this.topology.nodes.find(n => n.id === toId);
 
+            // Skip connections to dead stations
+            const fromDead = this.deadStations.has(fromId);
+            const toDead = this.deadStations.has(toId);
+
+            if (fromDead || toDead) {
+                return; // Don't draw connections to/from dead nodes
+            }
+
             // Only draw if at least one node is in this layer
             if (fromNode && toNode && (fromNode.layer === layer || toNode.layer === layer)) {
                 ctx.beginPath();
@@ -118,8 +142,42 @@ const NetworkMonitor = {
 
     drawNode(ctx, node) {
         const isSelected = this.selectedNode && this.selectedNode.id === node.id;
+        const isDead = this.deadStations.has(node.id);
+        const isFlickering = node.flickering;
         const layerProps = this.getLayerProperties(node.layer);
 
+        // Skip drawing if flickering and in "off" state
+        if (isFlickering) {
+            return;
+        }
+
+        // Dead node styling
+        if (isDead) {
+            // Draw dead node (dark, no glow)
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, layerProps.size, 0, 2 * Math.PI);
+            ctx.fillStyle = '#330000';
+            ctx.globalAlpha = 0.3;
+            ctx.fill();
+            ctx.strokeStyle = '#660000';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+
+            // Dead label
+            if (node.layer <= 2 || isSelected) {
+                ctx.fillStyle = '#660000';
+                ctx.font = `${layerProps.fontSize}px monospace`;
+                ctx.textAlign = 'center';
+                ctx.globalAlpha = 0.4;
+                ctx.fillText('[DEAD]', node.x, node.y - layerProps.size - 5);
+                ctx.globalAlpha = 1.0;
+            }
+
+            return;
+        }
+
+        // Normal node rendering (alive)
         // Node glow effect (for foreground nodes)
         if (node.layer === 1 && !isSelected) {
             ctx.beginPath();
@@ -387,12 +445,197 @@ const NetworkMonitor = {
         animate();
     },
 
+    // ========================================================================
+    // Network Collapse Methods
+    // ========================================================================
+
+    async checkForStationDeaths() {
+        /**
+         * Poll the server for station deaths and update the UI.
+         * Called periodically or on act transitions.
+         */
+        try {
+            const response = await fetch('/api/network/collapse/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    playerId: 'default'
+                })
+            });
+
+            const result = await response.json();
+
+            // Process any new deaths
+            if (result.deaths && result.deaths.length > 0) {
+                for (const death of result.deaths) {
+                    await this.killStation(death.station_id, death.reason, death.final_message);
+                }
+            }
+
+            // Update weight display
+            this.updateWeightDisplay(result.stations_active, result.player_weight, result.is_critical);
+
+        } catch (error) {
+            console.error('Error checking station deaths:', error);
+        }
+    },
+
+    async killStation(stationId, reason, finalMessage) {
+        /**
+         * Animate the death of a station.
+         *
+         * Animation phases:
+         * 1. Flicker (1000ms)
+         * 2. Connections snap
+         * 3. Node goes dark
+         */
+        const node = this.topology?.nodes.find(n => n.id === stationId);
+        if (!node) return;
+
+        App.log(`⚠ STATION DEATH: ${stationId} - ${reason}`);
+        if (finalMessage) {
+            App.log(`> "${finalMessage}"`);
+        }
+
+        // Play station death sound
+        AudioManager.play('stationDeath');
+
+        // Start death animation
+        this.deathAnimations.push({
+            stationId,
+            phase: 'flicker',
+            progress: 0,
+            startTime: Date.now()
+        });
+
+        // Phase 1: Flicker for 1 second
+        await this.flickerNode(node, 1000);
+
+        // Phase 2: Snap connections and mark as dead
+        setTimeout(() => {
+            this.deadStations.add(stationId);
+
+            // Update animation state
+            const anim = this.deathAnimations.find(a => a.stationId === stationId);
+            if (anim) {
+                anim.phase = 'dead';
+            }
+
+            // Recalculate weights
+            this.recalculateWeights();
+
+            this.draw();
+        }, 1200);
+    },
+
+    async flickerNode(node, duration) {
+        /**
+         * Make a node flicker before dying.
+         */
+        const startTime = Date.now();
+        const flicker = () => {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < duration) {
+                // Random visibility
+                node.flickering = Math.random() > 0.5;
+                this.draw();
+                setTimeout(flicker, 100);
+            } else {
+                node.flickering = false;
+            }
+        };
+        flicker();
+    },
+
+    recalculateWeights() {
+        /**
+         * Recalculate player weight based on remaining stations.
+         */
+        if (!this.topology) return;
+
+        const activeNodes = this.topology.nodes.filter(n => !this.deadStations.has(n.id));
+        this.stationsActive = activeNodes.length;
+
+        // Equal weight distribution
+        this.playerWeight = this.stationsActive > 0 ? (100 / this.stationsActive) : 100;
+
+        this.updateWeightDisplay(this.stationsActive, this.playerWeight, this.playerWeight >= 30);
+    },
+
+    updateWeightDisplay(stationsActive, playerWeight, isCritical) {
+        /**
+         * Update the consensus weight panel.
+         */
+        this.stationsActive = stationsActive;
+        this.playerWeight = playerWeight;
+
+        const weightEl = document.getElementById('player-weight');
+        const stationsEl = document.getElementById('stations-active');
+        const warningEl = document.getElementById('weight-warning');
+        const headerEl = document.getElementById('topology-header');
+
+        if (weightEl) {
+            weightEl.textContent = `${playerWeight.toFixed(1)}%`;
+
+            // Change color based on weight
+            if (isCritical) {
+                weightEl.style.color = '#ff6b35';
+                weightEl.style.textShadow = '0 0 10px rgba(255, 107, 53, 0.8)';
+            } else if (playerWeight >= 15) {
+                weightEl.style.color = '#ffaa00';
+            } else {
+                weightEl.style.color = '#00ff00';
+                weightEl.style.textShadow = 'none';
+            }
+        }
+
+        if (stationsEl) {
+            stationsEl.textContent = `${stationsActive}/50 Stations Online`;
+        }
+
+        if (warningEl) {
+            warningEl.style.display = isCritical ? 'block' : 'none';
+        }
+
+        if (headerEl) {
+            headerEl.textContent = `[IMPERIUM TOPOLOGY - ${stationsActive} NODES]`;
+        }
+    },
+
+    async startCollapseSequence() {
+        /**
+         * Begin the network collapse sequence.
+         * Stations will start dying according to the schedule.
+         */
+        this.collapseActive = true;
+        App.log('⚠ NETWORK COLLAPSE INITIATED');
+
+        // Poll for deaths every 2 seconds
+        this.collapseInterval = setInterval(() => {
+            this.checkForStationDeaths();
+        }, 2000);
+    },
+
+    stopCollapseSequence() {
+        /**
+         * Stop the collapse sequence.
+         */
+        this.collapseActive = false;
+        if (this.collapseInterval) {
+            clearInterval(this.collapseInterval);
+            this.collapseInterval = null;
+        }
+    },
+
     cleanup() {
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
         }
+        this.stopCollapseSequence();
         this.topology = null;
         this.selectedNode = null;
         this.txAnimations = [];
+        this.deadStations.clear();
+        this.deathAnimations = [];
     }
 };

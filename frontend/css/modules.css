@@ -61,6 +61,134 @@
     opacity: 1;
 }
 
+/* Graveyard blocks (consciousness archive) */
+.block-item.graveyard-block {
+    background: linear-gradient(135deg, rgba(26, 10, 10, 0.6) 0%, rgba(42, 21, 21, 0.6) 100%);
+    border: 2px solid rgba(74, 42, 42, 0.8);
+    box-shadow:
+        0 0 15px rgba(100, 30, 30, 0.4),
+        inset 0 0 20px rgba(0, 0, 0, 0.6);
+    position: relative;
+    opacity: 1;
+}
+
+.block-item.graveyard-block:hover {
+    border-color: var(--color-accent);
+    box-shadow:
+        0 0 20px rgba(255, 107, 53, 0.6),
+        inset 0 0 25px rgba(0, 0, 0, 0.7);
+}
+
+.block-item.graveyard-block.selected {
+    background: linear-gradient(135deg, rgba(42, 21, 21, 0.8) 0%, rgba(64, 32, 32, 0.8) 100%);
+    border-color: var(--color-accent);
+    box-shadow:
+        0 0 25px rgba(255, 107, 53, 0.8),
+        inset 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+/* Vignette/darkness overlay */
+.block-item.graveyard-block::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(10, 5, 5, 0.4) 100%);
+    pointer-events: none;
+    animation: graveyard-pulse 4s infinite;
+}
+
+/* Particle/dust effect overlay */
+.block-item.graveyard-block::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.05), transparent),
+        radial-gradient(1px 1px at 60% 70%, rgba(255, 255, 255, 0.05), transparent),
+        radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.03), transparent),
+        radial-gradient(1px 1px at 80% 10%, rgba(255, 255, 255, 0.04), transparent),
+        radial-gradient(1px 1px at 10% 80%, rgba(255, 255, 255, 0.03), transparent);
+    background-size: 100% 100%;
+    background-position: 0 0;
+    pointer-events: none;
+    opacity: 0.6;
+    animation: particles-float 8s infinite linear;
+}
+
+@keyframes graveyard-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+}
+
+@keyframes particles-float {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-10px); }
+}
+
+/* Network Collapse Styling */
+#consensus-weight-panel {
+    transition: all 0.3s ease;
+}
+
+#player-weight {
+    transition: color 0.5s ease, text-shadow 0.5s ease;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+#weight-warning {
+    animation: pulse-warning 2s infinite;
+    font-family: 'Courier New', monospace;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 5px rgba(255, 107, 53, 0.3);
+    }
+    50% {
+        opacity: 0.8;
+        box-shadow: 0 0 15px rgba(255, 107, 53, 0.6);
+    }
+}
+
+/* Station death styling */
+.station-dead {
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+.station-flickering {
+    animation: flicker 0.1s infinite;
+}
+
+@keyframes flicker {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+
+/* Critical consensus warning glow */
+#player-weight.critical {
+    color: var(--color-accent);
+    text-shadow: 0 0 10px rgba(255, 107, 53, 0.8);
+    animation: critical-pulse 1.5s infinite;
+}
+
+@keyframes critical-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
 /* Zoom level variations */
 .block-item.segment {
     min-width: 100px;
@@ -200,4 +328,802 @@
     display: flex;
     gap: var(--spacing-unit);
     margin-top: var(--spacing-unit);
+}
+
+/* Crypto Vault - Letters */
+.letter-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-unit);
+}
+
+.letter-item {
+    border: var(--border-width) solid var(--color-border);
+    padding: var(--spacing-unit);
+    background: rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.letter-item:hover {
+    border-color: var(--color-primary);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.letter-item.decrypted {
+    border-color: #00ff66;
+    background: rgba(0, 255, 102, 0.05);
+}
+
+.letter-item.encrypted {
+    border-color: #ff6400;
+    background: rgba(255, 100, 0, 0.05);
+}
+
+.letter-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-unit);
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    font-weight: bold;
+}
+
+.letter-icon {
+    font-size: 1.2em;
+}
+
+.letter-title {
+    color: var(--color-primary);
+    flex: 1;
+}
+
+.letter-timestamp {
+    color: var(--color-dim);
+    font-size: 0.9em;
+}
+
+.letter-preview {
+    margin: var(--spacing-unit) 0;
+    padding: var(--spacing-unit);
+    background: rgba(0, 0, 0, 0.5);
+    border-left: 2px solid var(--color-dim);
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    color: var(--color-dim);
+}
+
+.letter-item.decrypted .letter-preview {
+    color: var(--color-text);
+}
+
+.btn-decrypt-letter,
+.btn-view-letter {
+    padding: calc(var(--spacing-unit) / 2) var(--spacing-unit);
+    background: var(--color-primary);
+    color: var(--color-background);
+    border: none;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.btn-decrypt-letter:hover {
+    background: #ff6400;
+}
+
+.btn-view-letter:hover {
+    background: var(--color-highlight);
+}
+
+/* Crypto Vault - Keys */
+.key-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-unit);
+}
+
+.key-item {
+    border: var(--border-width) solid var(--color-border);
+    padding: var(--spacing-unit);
+    background: rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.key-item:hover {
+    border-color: #00c8ff;
+    background: rgba(0, 200, 255, 0.1);
+}
+
+.key-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: calc(var(--spacing-unit) / 2);
+}
+
+.key-iteration {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.key-badge {
+    font-size: 0.85em;
+    font-weight: bold;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.key-preview {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    color: var(--color-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: calc(var(--spacing-unit) / 2);
+    background: rgba(0, 0, 0, 0.5);
+    border-left: 2px solid #00c8ff;
+}
+
+.key-timestamp {
+    margin-top: calc(var(--spacing-unit) / 2);
+    font-size: 0.85em;
+    color: var(--color-dim);
+}
+
+/* ============================================================================
+   PROTOCOL ENGINE (SMART CONTRACTS) STYLES
+   ============================================================================ */
+
+.protocol-intro {
+    padding: var(--spacing-unit);
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    margin-bottom: var(--spacing-unit);
+    background: rgba(0, 200, 255, 0.05);
+}
+
+.protocol-description {
+    line-height: 1.6;
+    color: var(--color-dim);
+}
+
+.contracts-section {
+    margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: calc(var(--spacing-unit) / 2);
+    border-bottom: 1px solid rgba(0, 200, 255, 0.3);
+    margin-bottom: var(--spacing-unit);
+}
+
+.section-title {
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.section-count {
+    font-size: 0.9em;
+    color: var(--color-dim);
+}
+
+.contract-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-unit);
+}
+
+.contract-card {
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    padding: var(--spacing-unit);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.contract-card:hover {
+    border-color: #00c8ff;
+    background: rgba(0, 200, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.contract-card.locked-card {
+    cursor: not-allowed;
+    opacity: 0.6;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.contract-card.locked-card:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.contract-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: calc(var(--spacing-unit) / 2);
+}
+
+.contract-name {
+    font-weight: bold;
+    color: var(--color-primary);
+    font-size: 1.1em;
+}
+
+.contract-version {
+    font-size: 0.85em;
+    color: var(--color-dim);
+    font-family: 'Courier New', monospace;
+}
+
+.contract-author {
+    font-size: 0.85em;
+    color: var(--color-dim);
+    margin-bottom: calc(var(--spacing-unit) / 2);
+}
+
+.contract-description {
+    line-height: 1.5;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-unit);
+    min-height: 60px;
+}
+
+.contract-description.encrypted {
+    font-family: 'Courier New', monospace;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 1px;
+}
+
+.contract-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: calc(var(--spacing-unit) / 2);
+    border-top: 1px solid rgba(0, 200, 255, 0.2);
+    font-size: 0.9em;
+}
+
+.contract-act {
+    color: var(--color-dim);
+}
+
+.contract-action {
+    color: var(--color-primary);
+}
+
+.contract-unlock-hint {
+    color: #ff9100;
+    font-style: italic;
+}
+
+.no-contracts {
+    padding: calc(var(--spacing-unit) * 2);
+    text-align: center;
+    color: var(--color-dim);
+    font-style: italic;
+}
+
+/* Contract Viewer Styles */
+
+.back-button {
+    background: none;
+    border: 1px solid rgba(0, 200, 255, 0.5);
+    color: var(--color-primary);
+    padding: 4px 12px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    margin-right: var(--spacing-unit);
+    transition: all 0.2s;
+}
+
+.back-button:hover {
+    background: rgba(0, 200, 255, 0.2);
+    border-color: #00c8ff;
+}
+
+.contract-viewer {
+    padding: var(--spacing-unit);
+}
+
+.contract-header-info {
+    margin-bottom: calc(var(--spacing-unit) * 2);
+    padding-bottom: var(--spacing-unit);
+    border-bottom: 2px solid rgba(0, 200, 255, 0.3);
+}
+
+.contract-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-unit);
+    margin-bottom: calc(var(--spacing-unit) / 2);
+}
+
+.contract-title {
+    color: var(--color-primary);
+    font-size: 1.5em;
+    margin: 0;
+}
+
+.contract-version-badge {
+    font-size: 0.8em;
+    padding: 4px 8px;
+    background: rgba(0, 200, 255, 0.2);
+    border: 1px solid rgba(0, 200, 255, 0.5);
+    font-family: 'Courier New', monospace;
+}
+
+.contract-metadata {
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    font-size: 0.95em;
+}
+
+.contract-author-label {
+    color: var(--color-dim);
+}
+
+.contract-author-value {
+    color: var(--color-text);
+    font-weight: bold;
+}
+
+.contract-description-full {
+    line-height: 1.6;
+    color: var(--color-text);
+}
+
+.contract-code-section {
+    margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: calc(var(--spacing-unit) / 2);
+    background: rgba(0, 200, 255, 0.1);
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    border-bottom: none;
+}
+
+.code-label {
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.code-language {
+    font-size: 0.85em;
+    color: var(--color-dim);
+    font-family: 'Courier New', monospace;
+}
+
+.contract-code {
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    background: rgba(0, 0, 0, 0.6);
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.contract-code pre {
+    margin: 0;
+    padding: var(--spacing-unit);
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+}
+
+.contract-code code {
+    color: var(--color-text);
+}
+
+/* Syntax Highlighting Colors */
+.contract-code .keyword {
+    color: #ff79c6;
+    font-weight: bold;
+}
+
+.contract-code .comment {
+    color: #6272a4;
+    font-style: italic;
+}
+
+.contract-code .string {
+    color: #f1fa8c;
+}
+
+.contract-code .function-name {
+    color: #50fa7b;
+}
+
+.contract-code .type-name {
+    color: #8be9fd;
+    font-weight: bold;
+}
+
+.contract-code .number {
+    color: #bd93f9;
+}
+
+/* Contract Notes */
+.contract-notes {
+    margin-bottom: calc(var(--spacing-unit) * 2);
+    padding: var(--spacing-unit);
+    border: 2px solid #ff9100;
+    background: rgba(255, 145, 0, 0.1);
+}
+
+.notes-header {
+    font-weight: bold;
+    color: #ff9100;
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    font-size: 1.1em;
+}
+
+.notes-content {
+    line-height: 1.6;
+    color: var(--color-text);
+}
+
+/* Execution Interface */
+.execution-interface {
+    padding: var(--spacing-unit);
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    background: rgba(0, 200, 255, 0.05);
+}
+
+.execution-header {
+    font-weight: bold;
+    color: var(--color-primary);
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    font-size: 1.1em;
+}
+
+.execution-description {
+    margin-bottom: var(--spacing-unit);
+    line-height: 1.6;
+    color: var(--color-dim);
+}
+
+.testimony-input {
+    width: 100%;
+    min-height: 200px;
+    padding: var(--spacing-unit);
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    color: var(--color-text);
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+    line-height: 1.6;
+    resize: vertical;
+    margin-bottom: var(--spacing-unit);
+}
+
+.testimony-input:focus {
+    outline: none;
+    border-color: #00c8ff;
+    background: rgba(0, 200, 255, 0.05);
+}
+
+.deploy-button {
+    background: linear-gradient(135deg, #00c8ff 0%, #0088cc 100%);
+    border: none;
+    color: #000;
+    padding: calc(var(--spacing-unit) / 2) var(--spacing-unit);
+    font-weight: bold;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s;
+}
+
+.deploy-button:hover {
+    background: linear-gradient(135deg, #00d8ff 0%, #00a8ee 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 200, 255, 0.3);
+}
+
+.deploy-button:disabled {
+    background: rgba(100, 100, 100, 0.5);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.deployment-result {
+    margin-top: var(--spacing-unit);
+    padding: var(--spacing-unit);
+    border: 1px solid;
+    line-height: 1.6;
+}
+
+.deployment-result.success {
+    border-color: #50fa7b;
+    background: rgba(80, 250, 123, 0.1);
+}
+
+.deployment-result.error {
+    border-color: #ff5555;
+    background: rgba(255, 85, 85, 0.1);
+}
+
+.result-header {
+    font-weight: bold;
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    font-size: 1.05em;
+}
+
+.deployment-result.success .result-header {
+    color: #50fa7b;
+}
+
+.deployment-result.error .result-header {
+    color: #ff5555;
+}
+
+.result-details {
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    color: var(--color-text);
+}
+
+.result-hash {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    color: var(--color-dim);
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    word-break: break-all;
+}
+
+.result-immutable {
+    font-style: italic;
+    color: var(--color-primary);
+}
+
+/* Suspicion Warning */
+.suspicion-warning {
+    padding: var(--spacing-unit);
+    background: rgba(255, 85, 85, 0.2);
+    border: 1px solid #ff5555;
+    color: #ff5555;
+    margin-bottom: var(--spacing-unit);
+    animation: fadeInOut 3s ease-in-out;
+    font-weight: bold;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+}
+
+/* ============================================================================
+   HOME DASHBOARD - ACT-BASED PROGRESSIVE DEGRADATION
+   ============================================================================ */
+
+/* Home Action Buttons */
+.home-action-button {
+    padding: calc(var(--spacing-unit) / 2) var(--spacing-unit);
+    background: transparent;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.home-action-button:hover {
+    background: rgba(0, 255, 159, 0.1);
+    border-color: #00ff9f;
+    transform: translateY(-1px);
+}
+
+/* Progressive Glitch Effects */
+
+/* Act III: Subtle flicker */
+.glitch-subtle {
+    animation: glitch-subtle 8s infinite;
+}
+
+@keyframes glitch-subtle {
+    0%, 98% { opacity: 1; }
+    98.5% { opacity: 0.95; }
+    99% { opacity: 1; }
+    99.5% { opacity: 0.98; }
+    100% { opacity: 1; }
+}
+
+/* Act IV: Mild corruption */
+.glitch-mild {
+    animation: glitch-mild 6s infinite;
+}
+
+@keyframes glitch-mild {
+    0%, 94% {
+        transform: translate(0, 0);
+        filter: none;
+    }
+    95% {
+        transform: translate(1px, 0);
+        filter: hue-rotate(5deg);
+    }
+    96% {
+        transform: translate(-1px, 0);
+        filter: hue-rotate(-5deg);
+    }
+    97% {
+        transform: translate(0, 0);
+        filter: none;
+    }
+}
+
+/* Act V: Moderate glitching */
+.glitch-moderate {
+    animation: glitch-moderate 4s infinite;
+}
+
+@keyframes glitch-moderate {
+    0%, 88% {
+        transform: translate(0, 0) scale(1);
+        filter: none;
+        opacity: 1;
+    }
+    89% {
+        transform: translate(2px, -1px) scale(1.001);
+        filter: hue-rotate(10deg);
+        opacity: 0.95;
+    }
+    90% {
+        transform: translate(-2px, 1px) scale(0.999);
+        filter: hue-rotate(-10deg);
+        opacity: 0.98;
+    }
+    91% {
+        transform: translate(1px, 0) scale(1);
+        filter: none;
+        opacity: 0.96;
+    }
+    92% {
+        transform: translate(0, 0) scale(1);
+        filter: none;
+        opacity: 1;
+    }
+}
+
+/* Act VI: Aggressive reality breakdown */
+.glitch-aggressive {
+    animation: glitch-aggressive 3s infinite;
+}
+
+@keyframes glitch-aggressive {
+    0%, 80% {
+        transform: translate(0, 0) scale(1) skewX(0deg);
+        filter: none;
+        opacity: 1;
+    }
+    81% {
+        transform: translate(4px, -2px) scale(1.002) skewX(1deg);
+        filter: hue-rotate(20deg) saturate(1.5);
+        opacity: 0.9;
+    }
+    82% {
+        transform: translate(-4px, 2px) scale(0.998) skewX(-1deg);
+        filter: hue-rotate(-20deg) saturate(0.5);
+        opacity: 0.95;
+    }
+    83% {
+        transform: translate(2px, -1px) scale(1.001) skewX(0.5deg);
+        filter: hue-rotate(10deg);
+        opacity: 0.92;
+    }
+    84% {
+        transform: translate(-2px, 1px) scale(0.999) skewX(-0.5deg);
+        filter: hue-rotate(-10deg);
+        opacity: 0.97;
+    }
+    85% {
+        transform: translate(0, 0) scale(1) skewX(0deg);
+        filter: none;
+        opacity: 1;
+    }
+    /* Additional burst */
+    90% {
+        transform: translate(0, 0) scale(1);
+        filter: none;
+        opacity: 1;
+    }
+    91% {
+        transform: translate(3px, 0) scale(1.003) skewX(2deg);
+        filter: hue-rotate(30deg) brightness(1.2);
+        opacity: 0.85;
+    }
+    92% {
+        transform: translate(-3px, 0) scale(0.997) skewX(-2deg);
+        filter: hue-rotate(-30deg) brightness(0.8);
+        opacity: 0.9;
+    }
+    93% {
+        transform: translate(0, 0) scale(1) skewX(0deg);
+        filter: none;
+        opacity: 1;
+    }
+}
+
+/* Text corruption effect for Act VI */
+.act-6 #home-boot-log,
+.act-6 #home-ascii-logo,
+.act-6 #home-welcome {
+    text-shadow:
+        1px 0 0 rgba(255, 0, 0, 0.3),
+        -1px 0 0 rgba(0, 255, 255, 0.3),
+        0 0 5px rgba(255, 85, 85, 0.2);
+}
+
+/* Scanline effect for deterioration */
+.home-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+.act-5 .home-container::before,
+.act-6 .home-container::before {
+    opacity: 0.5;
+}
+
+/* Vignette effect intensifies per act */
+.home-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 40%,
+        rgba(0, 0, 0, 0.3) 100%
+    );
+    pointer-events: none;
+}
+
+.act-4 .home-container::after {
+    background: radial-gradient(
+        ellipse at center,
+        transparent 30%,
+        rgba(0, 0, 0, 0.5) 100%
+    );
+}
+
+.act-5 .home-container::after {
+    background: radial-gradient(
+        ellipse at center,
+        transparent 20%,
+        rgba(0, 0, 0, 0.7) 100%
+    );
+}
+
+.act-6 .home-container::after {
+    background: radial-gradient(
+        ellipse at center,
+        transparent 10%,
+        rgba(74, 0, 0, 0.8) 100%
+    );
 }

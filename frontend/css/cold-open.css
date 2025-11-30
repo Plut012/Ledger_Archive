@@ -1,0 +1,217 @@
+/* Cold Open Sequence Styles */
+
+#cold-open {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+.cold-open-content {
+    position: relative;
+    width: 80%;
+    max-width: 800px;
+    height: 60%;
+    max-height: 600px;
+}
+
+/* Scan Lines Effect */
+.scan-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(0, 255, 0, 0.03) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    animation: scan 8s linear infinite;
+    z-index: 2;
+}
+
+@keyframes scan {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
+}
+
+/* Static Overlay */
+.static-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(255, 255, 255, 0.03) 2px,
+            rgba(255, 255, 255, 0.03) 4px
+        );
+    opacity: 0.8;
+    animation: static-noise 0.2s steps(2) infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes static-noise {
+    0% { transform: translateX(0); }
+    10% { transform: translateX(-2px); }
+    20% { transform: translateX(2px); }
+    30% { transform: translateX(-2px); }
+    40% { transform: translateX(2px); }
+    50% { transform: translateX(0); }
+    60% { transform: translateX(-2px); }
+    70% { transform: translateX(2px); }
+    80% { transform: translateX(-2px); }
+    90% { transform: translateX(2px); }
+    100% { transform: translateX(0); }
+}
+
+/* Boot Text Container */
+.boot-text {
+    position: relative;
+    z-index: 3;
+    font-family: 'VT323', 'Courier New', monospace;
+    font-size: 24px;
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Individual Boot Lines */
+.boot-line {
+    margin: 8px 0;
+    animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Emphasis Lines (Iteration, ARCHIVIST) */
+.boot-line.emphasis {
+    color: #00ffff;
+    text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+    font-weight: bold;
+    font-size: 28px;
+    letter-spacing: 2px;
+}
+
+/* Warning Lines (Network Status) */
+.boot-line.warning {
+    color: #ffaa00;
+    text-shadow: 0 0 8px #ffaa00;
+}
+
+/* Glitch Text Effect */
+.boot-line.glitch-text {
+    animation: glitch 0.3s ease-in-out;
+}
+
+@keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    100% { transform: translate(0); }
+}
+
+/* Chromatic Aberration for Glitches */
+.boot-line.glitch-text::before,
+.boot-line.glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+}
+
+.boot-line.glitch-text::before {
+    color: #ff0000;
+    animation: glitch-red 0.3s infinite;
+    clip-path: inset(40% 0 60% 0);
+}
+
+.boot-line.glitch-text::after {
+    color: #0000ff;
+    animation: glitch-blue 0.3s infinite;
+    clip-path: inset(60% 0 40% 0);
+}
+
+@keyframes glitch-red {
+    0%, 100% { transform: translate(0); }
+    25% { transform: translate(-2px, 0); }
+    50% { transform: translate(2px, 0); }
+    75% { transform: translate(-2px, 0); }
+}
+
+@keyframes glitch-blue {
+    0%, 100% { transform: translate(0); }
+    25% { transform: translate(2px, 0); }
+    50% { transform: translate(-2px, 0); }
+    75% { transform: translate(2px, 0); }
+}
+
+/* Screen Flicker */
+#cold-open {
+    animation: screen-flicker 0.5s infinite;
+}
+
+@keyframes screen-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.97; }
+}
+
+/* Vignette Effect */
+.cold-open-content::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 4;
+}
+
+/* CRT Curve Simulation */
+#cold-open::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 60%,
+        rgba(0, 0, 0, 0.4) 100%
+    );
+    pointer-events: none;
+    z-index: 5;
+}

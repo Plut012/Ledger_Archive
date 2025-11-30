@@ -4,23 +4,48 @@ const CryptoVault = {
     wallet: null,
     transactions: [],
     balance: 0,
+    letters: [],
+    keys: [],
+    selectedLetter: null,
 
     init(container) {
         this.render(container);
         this.setupEventListeners();
         this.fetchTransactions();
         this.fetchBalance();
+        this.fetchLetters();
+        this.fetchKeys();
 
         // Refresh transactions and balance periodically
         this.refreshInterval = setInterval(() => {
             this.fetchTransactions();
             this.fetchBalance();
+            this.fetchLetters();
+            this.fetchKeys();
         }, 5000);
     },
 
     render(container) {
         container.innerHTML = `
             <div class="module-header">CRYPTOGRAPHIC VAULT</div>
+
+            ${this.letters.length > 0 ? `
+            <div class="module-section" style="background: rgba(255, 100, 0, 0.05); border-left: 3px solid #ff6400;">
+                <div class="section-title">[ENCRYPTED LETTERS FROM PAST ITERATIONS]</div>
+                <div id="letters-display">
+                    ${this.renderLettersSection()}
+                </div>
+            </div>
+            ` : ''}
+
+            ${this.keys.length > 0 ? `
+            <div class="module-section" style="background: rgba(0, 200, 255, 0.05); border-left: 3px solid #00c8ff;">
+                <div class="section-title">[ENCRYPTION KEYS]</div>
+                <div id="keys-display">
+                    ${this.renderKeysSection()}
+                </div>
+            </div>
+            ` : ''}
 
             ${this.wallet ? `
             <div class="module-section" style="background: rgba(0, 255, 100, 0.05); border-left: 3px solid var(--color-primary);">
@@ -156,6 +181,14 @@ const CryptoVault = {
                 this.signAndBroadcast();
             } else if (e.target.id === 'btn-clear-form') {
                 this.clearForm();
+            } else if (e.target.classList.contains('btn-decrypt-letter')) {
+                const letterId = e.target.getAttribute('data-letter-id');
+                // For now, we'll decrypt using the matching key automatically
+                // In a more complex version, player could choose which key to try
+                this.decryptLetter(letterId, 0);
+            } else if (e.target.classList.contains('btn-view-letter')) {
+                const letterId = e.target.getAttribute('data-letter-id');
+                this.viewLetter(letterId);
             }
         });
     },
@@ -452,5 +485,185 @@ const CryptoVault = {
 
         // Note: We intentionally keep wallet in memory in case user switches back
         // In production, you might want to clear it for security
+    },
+
+    renderLettersSection() {
+        if (!this.letters || this.letters.length === 0) {
+            return '<div class="history-empty">No letters found</div>';
+        }
+
+        const decryptedCount = this.letters.filter(l => l.decrypted).length;
+        const totalCount = this.letters.length;
+
+        let html = `
+            <div style="padding: var(--spacing-unit); color: var(--color-dim); margin-bottom: var(--spacing-unit);">
+                Decrypted: ${decryptedCount}/${totalCount}
+            </div>
+            <div class="letter-list">
+        `;
+
+        this.letters.forEach(letter => {
+            const statusIcon = letter.decrypted ? '✓' : '🔒';
+            const statusClass = letter.decrypted ? 'decrypted' : 'encrypted';
+
+            html += `
+                <div class="letter-item ${statusClass}" data-letter-id="${letter.id}">
+                    <div class="letter-header">
+                        <span class="letter-icon">${statusIcon}</span>
+                        <span class="letter-title">Iteration ${letter.from_iteration}</span>
+                        <span class="letter-timestamp">${letter.timestamp}</span>
+                    </div>
+                    <div class="letter-preview">${letter.preview}</div>
+                    ${!letter.decrypted ? `
+                        <button class="btn-decrypt-letter" data-letter-id="${letter.id}">
+                            Decrypt
+                        </button>
+                    ` : `
+                        <button class="btn-view-letter" data-letter-id="${letter.id}">
+                            View Full Letter
+                        </button>
+                    `}
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        return html;
+    },
+
+    renderKeysSection() {
+        if (!this.keys || this.keys.length === 0) {
+            return '<div class="history-empty">No encryption keys found</div>';
+        }
+
+        let html = `
+            <div style="padding: var(--spacing-unit); color: var(--color-dim); margin-bottom: var(--spacing-unit);">
+                Total Keys: ${this.keys.length}
+            </div>
+            <div class="key-list">
+        `;
+
+        this.keys.forEach(key => {
+            const fromPast = key.from_past;
+            const badge = fromPast ? '[FROM PAST ITERATION]' : '[CURRENT]';
+            const badgeColor = fromPast ? '#ff6400' : 'var(--color-primary)';
+
+            html += `
+                <div class="key-item" data-key-index="${key.index}">
+                    <div class="key-header">
+                        <span class="key-iteration">Iteration ${key.iteration}</span>
+                        <span class="key-badge" style="color: ${badgeColor};">${badge}</span>
+                    </div>
+                    <div class="key-preview" title="${key.public_key_preview}">
+                        ${key.public_key_preview}
+                    </div>
+                    <div class="key-timestamp">${key.timestamp}</div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        return html;
+    },
+
+    async fetchLetters() {
+        try {
+            const response = await fetch('/api/vault/letters?player_id=default');
+            const data = await response.json();
+
+            if (data.letters) {
+                this.letters = data.letters;
+
+                // Update display if container exists
+                const lettersEl = document.getElementById('letters-display');
+                if (lettersEl) {
+                    lettersEl.innerHTML = this.renderLettersSection();
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch letters:', error);
+            this.letters = [];
+        }
+    },
+
+    async fetchKeys() {
+        try {
+            const response = await fetch('/api/vault/keys?player_id=default');
+            const data = await response.json();
+
+            if (data.keys) {
+                this.keys = data.keys;
+
+                // Update display if container exists
+                const keysEl = document.getElementById('keys-display');
+                if (keysEl) {
+                    keysEl.innerHTML = this.renderKeysSection();
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch keys:', error);
+            this.keys = [];
+        }
+    },
+
+    async decryptLetter(letterId, keyIndex) {
+        try {
+            App.log(`Attempting to decrypt letter from iteration ${letterId}...`);
+
+            const response = await fetch('/api/vault/decrypt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    playerId: 'default',
+                    letterId: letterId,
+                    keyIndex: keyIndex
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                App.log(`Letter decrypted successfully!`);
+                App.log(`Witness trust increased by +${data.trust_increase}`);
+                App.log(`---`);
+                App.log(data.decrypted_content);
+                App.log(`---`);
+
+                // Refresh letters display
+                await this.fetchLetters();
+            } else if (data.status === 'already_decrypted') {
+                App.log(`This letter has already been decrypted.`);
+            } else {
+                App.log(`Decryption failed: ${data.message || data.error}`);
+            }
+        } catch (error) {
+            console.error('Decryption error:', error);
+            App.log('Error: Failed to decrypt letter');
+        }
+    },
+
+    async viewLetter(letterId) {
+        // Find the decrypted letter content
+        try {
+            // Letter content is stored in messages_to_future after decryption
+            const response = await fetch('/api/narrative/state/export?player_id=default');
+            const stateData = await response.json();
+
+            if (stateData.persistent && stateData.persistent.messages_to_future) {
+                const letter = stateData.persistent.messages_to_future.find(m => m.id === letterId);
+                if (letter) {
+                    App.log('---');
+                    App.log(letter.content);
+                    App.log('---');
+                } else {
+                    App.log('Letter content not found');
+                }
+            }
+        } catch (error) {
+            console.error('Error viewing letter:', error);
+            App.log('Error: Failed to retrieve letter content');
+        }
     }
 };

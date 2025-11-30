@@ -1,0 +1,60 @@
+feat: Implement Phase 05 - Network Collapse System
+
+Implements progressive station death mechanics with act-based escalation,
+player consensus weight visualization, and critical threshold warnings.
+
+Backend:
+- NetworkCollapseScheduler with deterministic death scheduling
+- Act-based death rates (slow → accelerating → rapid)
+- Player weight calculation and critical threshold detection
+- Game time tracking system
+- 4 new API endpoints for collapse control
+- 12 comprehensive unit tests (all passing)
+- State model extensions for collapse tracking
+
+Frontend:
+- Death animation system (flicker → disconnect sequence)
+- Dead station rendering (grayed out, no connections)
+- Player weight visualization panel with color-coded display
+- Critical threshold warning (pulsing alert at 30%+)
+- Automatic death polling every 2 seconds
+- Collapse sequence control (start/stop)
+- Real-time weight recalculation
+
+Death Schedule:
+- Act III (Days 10-20): ~14 deaths at 1-2/day
+- Act IV (Days 20-25): ~17 deaths at 3-5/day
+- Act V (Days 25-28): ~16 deaths in rapid succession
+- Final state: 3 stations survive for Act VI choice
+
+Integration:
+- Narrative trigger fires at Iteration ≥15 OR Witness trust ≥90
+- Act progression now persists in PersistentState
+- Collapse state tracked in SessionState
+- Clean API for future phase integration
+
+Testing:
+- 12 unit tests covering all scheduler functionality
+- Demo script for interactive testing
+- Manual integration testing verified
+
+Documentation:
+- PHASE_05_COMPLETE.md - Completion certificate
+- PHASE_05_QUICKREF.md - Quick reference guide
+- 05_IMPLEMENTATION_SUMMARY.md - Full technical docs
+
+Files:
+- New: backend/network/collapse.py (275 lines)
+- New: backend/test_network_collapse.py (170 lines)
+- New: backend/demo_collapse.py (120 lines)
+- Modified: backend/narrative/state.py (+15 lines)
+- Modified: backend/narrative/triggers.py (+20 lines)
+- Modified: backend/main.py (+150 lines)
+- Modified: frontend/js/modules/network-monitor.js (+180 lines)
+- Modified: frontend/css/modules.css (+60 lines)
+
+Total: ~1,000 lines added
+
+Status: ✅ PRODUCTION READY
+Complexity: MEDIUM (as estimated)
+Effort: ~4 hours

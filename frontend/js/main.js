@@ -11,12 +11,43 @@ const App = {
     currentModule: null,
     currentModuleName: null,
     ws: null,
+    stateManager: null,
+    narrativeState: null,
 
-    init() {
+    async init() {
         console.log('Initializing Interstellar Archive Terminal...');
+
+        // Hide main UI during cold open
+        document.getElementById('terminal-container').style.opacity = '0';
+
+        // Play cold open sequence first
+        await this.playColdOpen();
+
+        // Initialize audio system (will load sound files after user interaction)
+        AudioManager.init();
+
+        // Initialize narrative state manager
+        try {
+            const { stateManager } = await import('./modules/state-manager.js');
+            this.stateManager = stateManager;
+            await this.stateManager.initialize();
+            console.log('✓ Narrative state initialized');
+
+            // Subscribe to state changes
+            this.stateManager.subscribe((state) => {
+                this.handleStateChange(state);
+            });
+        } catch (error) {
+            console.error('Failed to initialize state manager:', error);
+        }
 
         // Initialize WebSocket connection
         this.ws = WebSocketClient.init();
+
+        // Setup WebSocket integration with state manager
+        if (this.stateManager) {
+            this.stateManager.setupWebSocket(this.ws.ws);
+        }
 
         // Setup navigation
         this.setupNavigation();
@@ -33,12 +64,38 @@ const App = {
         // Load initial module
         this.loadModule('station-shell');
 
-        // Show incoming transmission after brief delay
-        setTimeout(() => this.showTransmission(), 1000);
+        // Fade in main UI
+        await this.fadeInMainUI();
+
+        // Show boot messages in terminal
+        await this.showBootMessages();
+
+        // ARCHIVIST greeting
+        await this.archivistGreeting();
 
         // Update time display
         this.updateStationTime();
         setInterval(() => this.updateStationTime(), 1000);
+    },
+
+    handleStateChange(state) {
+        // Handle state changes (resets, act transitions, etc.)
+        if (state.reset) {
+            console.log(`🔄 Loop reset - Iteration ${state.iteration}`);
+            // Page will reload automatically via reset sequence
+        }
+
+        // Update UI based on state if needed
+        if (state.session) {
+            // Could update status bar, notifications, etc.
+            this.updateStateIndicators(state);
+        }
+    },
+
+    updateStateIndicators(state) {
+        // Update UI indicators based on narrative state
+        // This could show iteration number, act, suspicion level, etc.
+        // For now, we'll keep it minimal
     },
 
     setupNavigation() {
@@ -335,6 +392,72 @@ const App = {
         return new Promise(resolve => setTimeout(resolve, ms));
     },
 
+    /**
+     * Play cold open sequence
+     */
+    async playColdOpen() {
+        return new Promise((resolve) => {
+            ColdOpen.init((narrativeState) => {
+                this.narrativeState = narrativeState;
+                console.log('✓ Cold open complete', narrativeState);
+                resolve();
+            });
+        });
+    },
+
+    /**
+     * Fade in main terminal UI
+     */
+    async fadeInMainUI() {
+        const container = document.getElementById('terminal-container');
+        container.style.transition = 'opacity 2s ease-in';
+        container.style.opacity = '1';
+        await this.wait(2000);
+    },
+
+    /**
+     * Show boot messages in terminal console
+     */
+    async showBootMessages() {
+        console.log('📝 Showing boot messages...');
+        const messages = [
+            { text: '[SYSTEM] Neural link established', color: '#00ff00' },
+            { text: '[SYSTEM] Memory coherence: 87%', color: '#00ff00' },
+            { text: '[SYSTEM] Loading duty cycle parameters...', color: '#00ff00' },
+            { text: `[SYSTEM] Iteration ${this.narrativeState?.iteration || 17} - Duty Cycle ${this.narrativeState?.duty_cycle || 1}`, color: '#00ffff' },
+            { text: '[SYSTEM] ARCHIVIST connection: active', color: '#00ff00' },
+            { text: '', color: '#ffffff' }, // Blank line
+        ];
+
+        for (const msg of messages) {
+            await this.logTypewriter(msg.text, 30, msg.color);
+            await this.wait(200);
+        }
+
+        await this.wait(500);
+        console.log('✓ Boot messages complete');
+    },
+
+    /**
+     * ARCHIVIST greeting
+     */
+    async archivistGreeting() {
+        console.log('🤖 ARCHIVIST greeting...');
+        const greeting = "Welcome back, Captain. Your rest cycle was successful. I'm here to help you resume your duties. How are you feeling?";
+
+        await this.logTypewriter('[ARCHIVIST]', 40, '#00aaff');
+        await this.wait(300);
+        await this.logTypewriter(greeting, 35, '#00aaff');
+        await this.wait(500);
+
+        // Prompt user for input
+        const input = document.getElementById('command-input');
+        if (input) {
+            input.focus();
+        }
+        console.log('✓ ARCHIVIST greeting complete');
+    },
+
     updateStationTime() {
         const now = new Date();
         const year = 2347;
@@ -348,6 +471,11 @@ const App = {
 window.App = App;
 
 // Start the application when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    App.init();
+document.addEventListener('DOMContentLoaded', async () => {
+    await App.init();
+
+    // Expose state manager globally for easy access from modules
+    if (App.stateManager) {
+        window.StateManager = App.stateManager;
+    }
 });

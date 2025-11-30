@@ -94,7 +94,7 @@ const ChainViewer = {
         }
     },
 
-    renderChain() {
+    async renderChain() {
         const container = document.getElementById('chain-viz');
         if (!container) return;
 
@@ -103,7 +103,7 @@ const ChainViewer = {
         // Render based on zoom level
         switch (this.zoomLevel) {
             case 1:
-                this.renderBlockView(container);
+                await this.renderBlockView(container);
                 break;
             case 2:
                 this.renderSegmentView(container);
@@ -116,7 +116,7 @@ const ChainViewer = {
         this.updateMinimap();
     },
 
-    renderBlockView(container) {
+    async renderBlockView(container) {
         // Show individual blocks within the view window
         const blocksToShow = Math.min(20, this.viewWindow.end - this.viewWindow.start);
 
@@ -124,16 +124,25 @@ const ChainViewer = {
             const blockIndex = this.viewWindow.start + i;
             if (blockIndex >= this.totalBlocks) break;
 
-            const block = this.getBlockForDisplay(blockIndex);
+            const block = await this.getBlockForDisplay(blockIndex);
             const isTampered = this.tamperedBlock && this.tamperedBlock.index === block.index;
             const isProcedural = block.is_procedural;
+            const isGraveyard = block.isGraveyard || (blockIndex >= 50000 && blockIndex <= 75000);
 
             // Create block element
             const blockEl = document.createElement('div');
-            blockEl.className = 'block-item' + (isTampered ? ' tampered' : '') + (isProcedural ? ' procedural' : '');
+            let className = 'block-item';
+            if (isTampered) className += ' tampered';
+            if (isProcedural) className += ' procedural';
+            if (isGraveyard) className += ' graveyard-block';
+
+            blockEl.className = className;
             blockEl.textContent = `#${block.index}`;
             blockEl.dataset.index = blockIndex;
-            blockEl.title = isProcedural ? 'Historical (procedural)' : 'Real block';
+
+            let titleText = isProcedural ? 'Historical (procedural)' : 'Real block';
+            if (isGraveyard) titleText += ' [GRAVEYARD]';
+            blockEl.title = titleText;
 
             blockEl.addEventListener('click', () => this.selectBlock(blockIndex));
 
@@ -219,9 +228,18 @@ const ChainViewer = {
         }
     },
 
-    selectBlock(index) {
+    async selectBlock(index) {
         this.selectedBlock = index;
-        const block = this.getBlockForDisplay(index);
+        const block = await this.getBlockForDisplay(index);
+
+        // Play sound based on block range
+        if (index >= 50000 && index <= 75000) {
+            // Graveyard block - somber tone
+            AudioManager.play('graveyardClick');
+        } else {
+            // Normal block - validation sound
+            AudioManager.play('blockValidate');
+        }
 
         // Update global state for tutorial validation
         window.selectedBlockIndex = index;
@@ -241,6 +259,7 @@ const ChainViewer = {
         // Check if this block has been tampered with
         const isTampered = this.tamperedBlock && this.tamperedBlock.index === block.index;
         const displayBlock = isTampered ? this.tamperedBlock : block;
+        const isGraveyard = displayBlock.isGraveyard || (displayBlock.index >= 50000 && displayBlock.index <= 75000);
 
         // Calculate current hash and check if it matches
         let calculatedHash = displayBlock.hash;
@@ -254,17 +273,39 @@ const ChainViewer = {
         const difficulty = displayBlock.hash.match(/^0*/)[0].length;
         const difficultyBar = Terminal.createProgressBar((difficulty / 10) * 100);
 
-        // Render transactions
+        // Render transactions with memo decoding and reconstruction
         const txListHtml = displayBlock.transactions.length > 0
             ? displayBlock.transactions.map((tx, i) => {
                 const isCoinbase = tx.is_coinbase || tx.sender === 'COINBASE';
-                const icon = isCoinbase ? '*' : '→';
-                const style = isCoinbase ? 'color: var(--color-primary); font-weight: bold;' : '';
-                const label = isCoinbase ? 'COINBASE' : 'TX';
+                const isArchive = tx.type === 'archive';
+                const hasEncodedMemo = tx.memo && tx.memo.length > 0;
+
+                let icon = isCoinbase ? '*' : '→';
+                let style = isCoinbase ? 'color: var(--color-primary); font-weight: bold;' : '';
+                let label = isCoinbase ? 'COINBASE' : 'TX';
+
+                if (isArchive) {
+                    icon = '✦';
+                    style = 'color: var(--color-accent); font-weight: bold;';
+                    label = 'ARCHIVE';
+                }
+
+                let memoHtml = '';
+                if (hasEncodedMemo) {
+                    memoHtml = `
+                        <div style="margin-left: calc(var(--spacing-unit) * 3); margin-top: 4px;">
+                            <span style="color: var(--color-dim);">Memo:</span>
+                            <code style="background: rgba(0,255,100,0.1); padding: 2px 4px; font-size: 12px;">${tx.memo.substring(0, 40)}...</code>
+                            <button onclick="ChainViewer.decodeMemo('${tx.memo}')" style="margin-left: 8px; padding: 2px 8px; font-size: 12px;">Decode</button>
+                            ${isArchive ? `<button onclick="ChainViewer.reconstructConsciousness(${displayBlock.index}, ${i})" style="margin-left: 4px; padding: 2px 8px; font-size: 12px; background: var(--color-accent); border-color: var(--color-accent);">⚠ Reconstruct</button>` : ''}
+                        </div>
+                    `;
+                }
 
                 return `
                     <div class="detail-line" style="${style}; margin-left: calc(var(--spacing-unit) * 2);">
-                        ${icon} ${label} #${i}: ${Terminal.truncateHash(tx.sender, 8)} → ${Terminal.truncateHash(tx.recipient, 8)} (${tx.amount} CREDITS)
+                        ${icon} ${label} #${i}: ${Terminal.truncateHash(tx.sender, 8)} → ${Terminal.truncateHash(tx.recipient || tx.receiver, 8)} (${tx.amount} ${tx.type === 'archive' ? 'UNITS' : 'CREDITS'})
+                        ${memoHtml}
                     </div>
                 `;
             }).join('')
@@ -293,7 +334,14 @@ const ChainViewer = {
                              color: var(--color-primary); padding: 4px; font-family: var(--font-main);">`
             : displayBlock.timestamp;
 
+        const graveyardLabel = isGraveyard ? `
+            <div style="background: rgba(255,107,53,0.2); border: 1px solid var(--color-accent); padding: 8px; margin-bottom: var(--spacing-unit); color: var(--color-accent); font-weight: bold;">
+                ⚠ GRAVEYARD BLOCK - Consciousness Archive Records
+            </div>
+        ` : '';
+
         container.innerHTML = `
+            ${graveyardLabel}
             <div class="detail-line">
                 <span class="detail-label">Index:</span>
                 <span class="detail-value">#${displayBlock.index}</span>
@@ -537,8 +585,8 @@ const ChainViewer = {
         }
     },
 
-    getBlockForDisplay(index) {
-        // Return real block if it exists, otherwise generate procedural
+    async getBlockForDisplay(index) {
+        // Return real block if it exists
         if (index < this.blocks.length) {
             return this.blocks[index];
         }
@@ -548,17 +596,80 @@ const ChainViewer = {
             return this.proceduralBlocks.get(index);
         }
 
-        // Generate and cache
-        const block = ProceduralChain.generateBlock(index);
-        this.proceduralBlocks.set(index, block);
+        // Fetch from backend API (which uses deterministic generation)
+        try {
+            const response = await fetch(`/api/blockchain/block/${index}`);
+            const block = await response.json();
 
-        // Limit cache size to 1000 blocks
-        if (this.proceduralBlocks.size > 1000) {
-            const firstKey = this.proceduralBlocks.keys().next().value;
-            this.proceduralBlocks.delete(firstKey);
+            // Cache the block
+            this.proceduralBlocks.set(index, block);
+
+            // Limit cache size to 1000 blocks
+            if (this.proceduralBlocks.size > 1000) {
+                const firstKey = this.proceduralBlocks.keys().next().value;
+                this.proceduralBlocks.delete(firstKey);
+            }
+
+            return block;
+        } catch (error) {
+            console.error('Failed to fetch block:', error);
+            // Fallback to local procedural generation
+            const block = ProceduralChain.generateBlock(index);
+            this.proceduralBlocks.set(index, block);
+            return block;
         }
+    },
 
-        return block;
+    decodeMemo(encodedMemo) {
+        try {
+            const decoded = atob(encodedMemo);
+            App.log('Decoded memo:');
+            App.log(decoded);
+        } catch (error) {
+            App.log('Error: Failed to decode memo');
+        }
+    },
+
+    async reconstructConsciousness(blockIndex, txIndex) {
+        App.log(`⚠ WARNING: Initiating consciousness reconstruction...`);
+        App.log(`This action is MONITORED by ARCHIVIST systems.`);
+
+        try {
+            // Get player ID from state manager if available
+            const playerId = window.stateManager?.playerId || 'default';
+
+            const response = await fetch('/api/blockchain/reconstruct', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    blockIndex,
+                    txIndex,
+                    playerId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                App.log(`Error: ${result.error}`);
+                return;
+            }
+
+            // Display reconstruction in a modal or log
+            App.log('─'.repeat(64));
+            App.log(result.reconstruction);
+            App.log('─'.repeat(64));
+
+            // Update state if available
+            if (result.stateUpdates && window.stateManager) {
+                App.log(`⚠ ARCHIVIST Suspicion: +20 (now ${result.stateUpdates.archivistSuspicion})`);
+                App.log(`✓ Witness Trust: +10 (now ${result.stateUpdates.witnessTrust})`);
+            }
+
+        } catch (error) {
+            console.error('Reconstruction error:', error);
+            App.log('Error: Failed to reconstruct consciousness');
+        }
     },
 
     cleanup() {
